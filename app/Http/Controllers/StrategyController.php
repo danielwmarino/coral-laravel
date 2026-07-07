@@ -23,6 +23,11 @@ class StrategyController extends Controller
             $clientId = session('active_client_id');
             $client = $clientId ? \App\Models\Client::find($clientId) : null;
         }
+        \Illuminate\Support\Facades\Log::info('PPTX auth', [
+            'client_id'   => $client?->id,
+            'strategy_id' => $strategy->client_id,
+            'match'       => $client && $strategy->client_id === $client->id,
+        ]);
         abort_unless($client && $strategy->client_id === $client->id, 403);
 
         if (!class_exists('\ZipArchive')) {
