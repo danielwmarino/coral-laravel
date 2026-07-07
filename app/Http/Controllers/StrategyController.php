@@ -14,6 +14,7 @@ class StrategyController extends Controller
 
     public function downloadSlides(string $id)
     {
+        try {
         $strategy = Strategy::findOrFail($id);
 
         $user = auth()->user();
@@ -23,21 +24,15 @@ class StrategyController extends Controller
             $clientId = session('active_client_id');
             $client = $clientId ? \App\Models\Client::find($clientId) : null;
         }
+
         \Illuminate\Support\Facades\Log::info('PPTX auth', [
-            'client_id'   => $client?->id,
-            'strategy_id' => $strategy->client_id,
-            'match'       => $client && $strategy->client_id === $client->id,
+            'user'        => $user?->id,
+            'client'      => $client?->id,
+            'strategy'    => $strategy->client_id,
         ]);
-        abort_unless($client && $strategy->client_id === $client->id, 403);
 
-        if (!class_exists('\ZipArchive')) {
-            \Illuminate\Support\Facades\Log::error('PPTX: ZipArchive not available');
-            abort(500, 'ZipArchive extension required.');
-        }
-
-        if (!class_exists('\PhpOffice\PhpPresentation\PhpPresentation')) {
-            \Illuminate\Support\Facades\Log::error('PPTX: PhpPresentation not available');
-            abort(500, 'PhpPresentation package not found.');
+        if (!$client || $strategy->client_id !== $client->id) {
+            abort(403);
         }
 
         try {
@@ -63,12 +58,20 @@ class StrategyController extends Controller
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             ])->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('PPTX generation failed', [
-                'error'   => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
+            \Illuminate\Support\Facades\Log::error('PPTX inner error', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
             ]);
-            abort(500, 'Slide generation failed: ' . $e->getMessage());
+            abort(500, $e->getMessage());
+        }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('PPTX outer error', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ]);
+            return response($e->getMessage(), 500);
         }
     }
 
