@@ -14,7 +14,7 @@ class StrategyController extends Controller
 
     public function downloadSlides(string $id)
     {
-        \Illuminate\Support\Facades\Log::info('PPTX: downloadSlides called', ['id' => $id]);
+        return response('controller reached: ' . $id, 200);
         $strategy = Strategy::findOrFail($id);
 
         $user = auth()->user();
