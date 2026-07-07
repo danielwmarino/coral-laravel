@@ -28,8 +28,11 @@ class AdminPage extends Component
     {
         $this->validate([
             'newClientName' => 'required|string|max:255',
-            'newClientSlug' => 'required|string|max:255',
         ]);
+
+        if (!$this->newClientSlug) {
+            $this->newClientSlug = strtolower(preg_replace('/[^a-z0-9-]/', '', str_replace(' ', '-', strtolower($this->newClientName))));
+        }
 
         Client::create([
             'name' => trim($this->newClientName),
