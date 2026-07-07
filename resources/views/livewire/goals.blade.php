@@ -31,11 +31,15 @@
                 </button>
                 @if($hasStrategy)
                     <button wire:click="generateGoals" wire:loading.attr="disabled"
-                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60 whitespace-nowrap">
-                        <svg wire:loading.remove wire:target="generateGoals" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        <svg wire:loading wire:target="generateGoals" class="animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        <span wire:loading.remove wire:target="generateGoals">Generate from Strategy</span>
-                        <span wire:loading wire:target="generateGoals">Generating…</span>
+                        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60">
+                        <span wire:loading.remove wire:target="generateGoals" class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            Generate from Strategy
+                        </span>
+                        <span wire:loading wire:target="generateGoals" class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            Generating…
+                        </span>
                     </button>
                 @endif
             @endif
