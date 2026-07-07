@@ -97,14 +97,13 @@ class GoalsPage extends Component
                 model: 'claude-haiku-4-5-20251001',
             );
             $raw = $response->content[0]->text ?? '[]';
-            // Strip markdown code fences
-            $raw = trim($raw);
-            $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw);
-            $raw = preg_replace('/\s*```\s*$/i', '', $raw);
-            $raw = trim($raw);
+            // Extract JSON array from anywhere in the response
+            $start = strpos($raw, '[');
+            $end = strrpos($raw, ']');
+            $raw = ($start !== false && $end !== false) ? substr($raw, $start, $end - $start + 1) : '[]';
             $suggestions = json_decode($raw, true);
             if (!is_array($suggestions)) {
-                $this->generateError = 'AI returned unexpected format. Raw: ' . mb_substr($raw, 0, 300);
+                $this->generateError = 'Could not parse AI response. Please try again.';
                 $this->generating = false;
                 return;
             }
