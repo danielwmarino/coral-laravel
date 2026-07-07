@@ -103,7 +103,7 @@ class GoalsPage extends Component
             $raw = ($start !== false && $end !== false) ? substr($raw, $start, $end - $start + 1) : '[]';
             $suggestions = json_decode($raw, true);
             if (!is_array($suggestions)) {
-                $this->generateError = 'Could not parse AI response. Please try again.';
+                $this->generateError = 'Parse error: ' . json_last_error_msg() . ' | Raw[0-200]: ' . mb_substr($raw, 0, 200);
                 $this->generating = false;
                 return;
             }
