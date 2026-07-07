@@ -177,7 +177,7 @@ class GoalsPage extends Component
                     'strategy_id'  => $this->approvedStrategy()->id,
                     'title'        => $s['title'],
                     'description'  => $s['description'] ?? null,
-                    'smart_details' => $s['smart_details'] ?? null,
+                    'smart_details' => $s['smart_details'] ?? [],
                     'metric_type'  => $s['metric_type'] ?? 'number',
                     'target_value' => $targetValue,
                     'due_date'     => $dueDate,
