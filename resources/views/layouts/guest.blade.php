@@ -16,9 +16,9 @@
     </head>
     <body class="font-sans text-gray-900 antialiased" style="background-color: #12336c;">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
-            {{-- Coral wordmark --}}
+            {{-- Coral logo --}}
             <div class="mb-6">
-                <span style="font-family: 'Poppins', sans-serif; font-size: 2rem; font-weight: 700; color: #ffffff; letter-spacing: -0.02em;">coral</span>
+                <img src="{{ asset('Coral-Logo.png') }}" alt="Coral" class="h-10 w-auto">
             </div>
 
             <div class="w-full sm:max-w-md px-8 py-8 bg-white shadow-xl overflow-hidden sm:rounded-2xl">
