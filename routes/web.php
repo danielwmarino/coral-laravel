@@ -18,26 +18,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/strategy', fn () => view('strategy.index'))->name('strategy');
     Route::get('/strategy/new', fn () => view('strategy.new'))->name('strategy.new');
     Route::get('/strategy/{id}/slides', [StrategyController::class, 'downloadSlides'])->name('strategy.slides');
-    Route::get('/strategy/{id}/slides-test', function (string $id) {
-        return response()->json(['ok' => true, 'id' => $id, 'zip' => class_exists('ZipArchive'), 'ppt' => class_exists('\PhpOffice\PhpPresentation\PhpPresentation')]);
-    });
-    Route::get('/strategy/{id}/pptx-test', function (string $id) {
-        try {
-            $prs = new \PhpOffice\PhpPresentation\PhpPresentation();
-            $slide = $prs->getActiveSlide();
-            $shape = $slide->createRichTextShape();
-            $shape->setOffsetX(100)->setOffsetY(100)->setWidth(500)->setHeight(100);
-            $shape->createTextRun('Test');
-            $tmp = sys_get_temp_dir() . '/coral_pptx_test_' . uniqid() . '.pptx';
-            $writer = \PhpOffice\PhpPresentation\IOFactory::createWriter($prs, 'PowerPoint2007');
-            $writer->save($tmp);
-            $size = file_exists($tmp) ? filesize($tmp) : 0;
-            @unlink($tmp);
-            return response()->json(['ok' => true, 'tmp_dir' => sys_get_temp_dir(), 'file_size' => $size]);
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
-        }
-    });
 
     Route::get('/goals', fn () => view('goals.index'))->name('goals.index');
     Route::get('/goals/{goal}', fn ($goal) => view('goals.show', ['goalId' => $goal]))->name('goals.show');
