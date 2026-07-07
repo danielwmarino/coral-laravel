@@ -19,8 +19,9 @@ class GoalsPage extends Component
 
     // Review dialog
     public bool $reviewOpen = false;
-    public array $reviewItems = [];
+    public array $reviewItems = [];   // lean: title, description, isExisting, goalId
     public array $reviewChecked = [];
+    public string $suggestionsJson = '[]'; // full suggestion data stored as JSON string
 
     // Add goal dialog
     public bool $addOpen = false;
@@ -114,12 +115,14 @@ class GoalsPage extends Component
             return;
         }
 
+        $this->suggestionsJson = json_encode($suggestions);
+
         $items = [];
         foreach ($existingGoals->where('archived', false) as $g) {
             $items[] = ['title' => $g->title, 'description' => $g->description, 'goalId' => $g->id, 'isExisting' => true];
         }
-        foreach ($suggestions as $s) {
-            $items[] = ['title' => $s['title'], 'description' => $s['description'] ?? '', 'suggestion' => $s, 'isExisting' => false];
+        foreach ($suggestions as $i => $s) {
+            $items[] = ['title' => $s['title'], 'description' => mb_substr($s['description'] ?? '', 0, 100), 'suggestionIndex' => $i, 'isExisting' => false];
         }
 
         $this->reviewItems = $items;
@@ -158,14 +161,15 @@ class GoalsPage extends Component
     {
         if (!$this->client || !$this->approvedStrategy()) return;
 
+        $suggestions = json_decode($this->suggestionsJson, true) ?? [];
+
         foreach ($this->reviewItems as $i => $item) {
             $checked = $this->reviewChecked[$i] ?? false;
 
             if ($item['isExisting'] && !$checked) {
-                // Uncheck existing → archive
                 Goal::find($item['goalId'])?->update(['archived' => true]);
             } elseif (!$item['isExisting'] && $checked) {
-                $s = $item['suggestion'];
+                $s = $suggestions[$item['suggestionIndex']] ?? [];
                 preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
                 $targetValue = isset($m[0]) ? (float) $m[0] : 0;
                 $dueDate = null;
@@ -193,6 +197,7 @@ class GoalsPage extends Component
         $this->reviewOpen = false;
         $this->reviewItems = [];
         $this->reviewChecked = [];
+        $this->suggestionsJson = '[]';
         session()->flash('toast', 'Goals updated');
     }
 
