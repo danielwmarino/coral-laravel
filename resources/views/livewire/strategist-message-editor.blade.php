@@ -1,26 +1,38 @@
 <div class="w-full">
     @if($editing)
+        {{-- Quill CSS + JS must load before Alpine init() runs --}}
+        <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+
+        <style>
+            .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; border-color: #e5e7eb; }
+            .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; border-color: #e5e7eb; font-size: 0.875rem; }
+            .ql-editor { min-height: 120px; color: #374151; }
+            .ql-editor.ql-blank::before { color: #d1d5db; font-style: italic; }
+        </style>
+
         {{-- Edit mode: Quill rich text editor --}}
         <div
             x-data="{
                 quill: null,
                 init() {
-                    this.quill = new Quill(this.$refs.editor, {
-                        theme: 'snow',
-                        placeholder: 'Write a message for your client...',
-                        modules: {
-                            toolbar: [
-                                ['bold', 'italic', 'underline'],
-                                [{ list: 'ordered' }, { list: 'bullet' }],
-                                ['clean']
-                            ]
+                    this.$nextTick(() => {
+                        this.quill = new Quill(this.$refs.editor, {
+                            theme: 'snow',
+                            placeholder: 'Write a message for your client...',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline'],
+                                    [{ list: 'ordered' }, { list: 'bullet' }],
+                                    ['clean']
+                                ]
+                            }
+                        });
+                        const existing = @js($client->strategist_message ?? '');
+                        if (existing) {
+                            this.quill.clipboard.dangerouslyPasteHTML(existing);
                         }
                     });
-                    // Load existing content
-                    const existing = @js($client->strategist_message ?? '');
-                    if (existing) {
-                        this.quill.clipboard.dangerouslyPasteHTML(existing);
-                    }
                 },
                 saveContent() {
                     const html = this.$refs.editor.querySelector('.ql-editor').innerHTML;
@@ -29,8 +41,7 @@
             }"
             class="mt-1"
         >
-            {{-- Quill editor container --}}
-            <div x-ref="editor" class="bg-white rounded-lg border border-gray-200 text-sm text-gray-700" style="min-height: 140px;"></div>
+            <div x-ref="editor" class="bg-white rounded-lg border border-gray-200 text-sm text-gray-700"></div>
 
             <div class="flex gap-2 mt-2">
                 <button
@@ -47,17 +58,6 @@
                 </button>
             </div>
         </div>
-
-        {{-- Quill CSS + JS (loaded only when editing) --}}
-        <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
-
-        <style>
-            .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; border-color: #e5e7eb; }
-            .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; border-color: #e5e7eb; font-size: 0.875rem; }
-            .ql-editor { min-height: 120px; color: #374151; }
-            .ql-editor.ql-blank::before { color: #d1d5db; font-style: italic; }
-        </style>
     @else
         {{-- View mode (agency sees edit button) --}}
         <button
