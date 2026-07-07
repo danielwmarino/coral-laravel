@@ -17,7 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/strategy', fn () => view('strategy.index'))->name('strategy');
     Route::get('/strategy/new', fn () => view('strategy.new'))->name('strategy.new');
-    Route::get('/strategy/{strategy}/slides', [StrategyController::class, 'downloadSlides'])->name('strategy.slides');
+    Route::get('/strategy/{id}/slides', [StrategyController::class, 'downloadSlides'])->name('strategy.slides');
+    Route::get('/strategy/{id}/slides-test', function (string $id) {
+        return response()->json(['ok' => true, 'id' => $id, 'zip' => class_exists('ZipArchive'), 'ppt' => class_exists('\PhpOffice\PhpPresentation\PhpPresentation')]);
+    });
 
     Route::get('/goals', fn () => view('goals.index'))->name('goals.index');
     Route::get('/goals/{goal}', fn ($goal) => view('goals.show', ['goalId' => $goal]))->name('goals.show');
