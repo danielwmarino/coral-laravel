@@ -362,6 +362,7 @@ class DatasetPage extends Component
                 ->where('source_type', 'document')
                 ->selectRaw('source_label, count(*) as chunk_count, max(created_at) as last_updated')
                 ->groupBy('source_label')
+                ->toBase()
                 ->get()
             : collect();
 
@@ -372,6 +373,7 @@ class DatasetPage extends Component
                 ->selectRaw('source_label, count(*) as chunk_count')
                 ->groupBy('source_label')
                 ->limit(30)
+                ->toBase()
                 ->get()
             : collect();
 
