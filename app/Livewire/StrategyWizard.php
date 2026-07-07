@@ -163,9 +163,24 @@ Generate a structured digital marketing strategy document with these sections:
 Be specific and actionable. Avoid generic platitudes.";
 
         $this->generateError = '';
-        GenerateStrategy::dispatch($this->strategyId, $prompt);
+        try {
+            set_time_limit(120);
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 4000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-sonnet-4-6',
+            );
+            $doc = $response->content[0]->text ?? '';
+            $this->generatedDoc = $doc;
+            Strategy::find($this->strategyId)?->update([
+                'generated_document' => $doc,
+                'status'             => 'draft',
+            ]);
+        } catch (\Exception $e) {
+            $this->generateError = 'Failed: ' . $e->getMessage();
+        }
         $this->generating = false;
-        $this->polling = true;
+        $this->polling = false;
     }
 
     public function checkGenerated(): void
