@@ -14,6 +14,7 @@ class GoalsPage extends Component
 {
     public ?Client $client = null;
     public bool $generating = false;
+    public string $generateError = '';
 
     // Review dialog
     public bool $reviewOpen = false;
@@ -72,6 +73,8 @@ class GoalsPage extends Component
         if (!$strategy || !$this->client) return;
 
         $this->generating = true;
+        $this->generateError = '';
+        set_time_limit(120);
 
         $existingGoals = Goal::where('client_id', $this->client->id)->get();
         $existingText = $existingGoals->isNotEmpty()
@@ -96,7 +99,10 @@ class GoalsPage extends Component
             $raw = preg_replace('/\s*```$/i', '', $raw);
             $suggestions = json_decode($raw, true) ?? [];
         } catch (\Exception $e) {
+            $this->generateError = 'Failed to generate goals: ' . $e->getMessage();
             $suggestions = [];
+            $this->generating = false;
+            return;
         }
 
         // Build review list: existing active goals + suggestions

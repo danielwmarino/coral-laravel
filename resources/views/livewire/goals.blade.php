@@ -9,6 +9,10 @@
         </div>
     @endif
 
+    @if($generateError)
+        <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ $generateError }}</div>
+    @endif
+
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
