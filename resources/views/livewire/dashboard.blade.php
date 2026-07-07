@@ -22,7 +22,30 @@
             <p class="text-sm text-gray-400 mt-0.5">Marketing intelligence overview</p>
         </div>
 
-        {{-- ── 2. EXECUTIVE SUMMARY ── --}}
+        {{-- ── 2. MESSAGE FROM STRATEGIST ── --}}
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+            <div class="flex items-center gap-2 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <h2 class="text-sm font-semibold text-[#003470]">Message from your Strategist</h2>
+            </div>
+            @if($isAgency)
+                <p class="text-xs text-gray-400 mb-3">Lines starting with <code class="bg-gray-100 px-1 rounded">-</code> will also appear as bullet points in the Executive Summary below.</p>
+                @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
+            @else
+                @if($client->strategist_message)
+                    @php
+                        $nonBulletLines = collect(explode("\n", $client->strategist_message))
+                            ->reject(fn($l) => str_starts_with(ltrim($l), '-'))
+                            ->join("\n");
+                    @endphp
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ trim($nonBulletLines) ?: $client->strategist_message }}</p>
+                @else
+                    <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
+                @endif
+            @endif
+        </div>
+
+        {{-- ── 3. EXECUTIVE SUMMARY ── --}}
         @php
             $strategistMessage = $client->strategist_message ?? '';
             $bulletLines = collect(explode("\n", $strategistMessage))
@@ -203,28 +226,6 @@
             </div>
         @endif
 
-        {{-- ── 5. MESSAGE FROM STRATEGIST ── --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <div class="flex items-center gap-2 mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <h2 class="text-sm font-semibold text-[#003470]">Message from your Strategist</h2>
-            </div>
-            @if($isAgency)
-                <p class="text-xs text-gray-400 mb-3">Lines starting with <code class="bg-gray-100 px-1 rounded">-</code> will also appear as bullet points in the Executive Summary above.</p>
-                @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
-            @else
-                @if($client->strategist_message)
-                    @php
-                        $nonBulletLines = collect(explode("\n", $client->strategist_message))
-                            ->reject(fn($l) => str_starts_with(ltrim($l), '-'))
-                            ->join("\n");
-                    @endphp
-                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ trim($nonBulletLines) ?: $client->strategist_message }}</p>
-                @else
-                    <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
-                @endif
-            @endif
-        </div>
 
     @endif
 </div>
