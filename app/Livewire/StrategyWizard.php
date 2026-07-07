@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\GenerateStrategy;
 use App\Models\Client;
 use App\Models\Strategy;
 use Illuminate\Support\Facades\Session;
@@ -40,6 +41,7 @@ class StrategyWizard extends Component
 
     // Step 6 – Review
     public bool $generating = false;
+    public bool $polling = false;
     public string $generatedDoc = '';
     public bool $submitting = false;
     public string $generateError = '';
@@ -161,24 +163,25 @@ Generate a structured digital marketing strategy document with these sections:
 Be specific and actionable. Avoid generic platitudes.";
 
         $this->generateError = '';
-        try {
-            $response = app(\Anthropic\Client::class)->messages->create([
-                'model'      => 'claude-haiku-4-5-20251001',
-                'max_tokens' => 2000,
-                'messages'   => [['role' => 'user', 'content' => $prompt]],
-            ]);
-            $doc = $response->content[0]->text ?? '';
-            $this->generatedDoc = $doc;
-
-            Strategy::find($this->strategyId)?->update([
-                'generated_document' => $doc,
-                'status'             => 'draft',
-            ]);
-        } catch (\Exception $e) {
-            $this->generateError = 'Failed to generate: ' . $e->getMessage();
-        }
-
+        GenerateStrategy::dispatch($this->strategyId, $prompt);
         $this->generating = false;
+        $this->polling = true;
+    }
+
+    public function checkGenerated(): void
+    {
+        if (!$this->strategyId) return;
+        $strategy = Strategy::find($this->strategyId);
+        if ($strategy && $strategy->generated_document) {
+            $doc = $strategy->generated_document;
+            if (str_starts_with($doc, 'ERROR:')) {
+                $this->generateError = $doc;
+                $this->polling = false;
+            } else {
+                $this->generatedDoc = $doc;
+                $this->polling = false;
+            }
+        }
     }
 
     public function submitForReview(): void
