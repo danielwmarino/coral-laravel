@@ -6,10 +6,9 @@ use App\Models\Strategy;
 
 class StrategyController extends Controller
 {
-    private const NAVY  = 'FF003470';
-    private const PINK  = 'FFFC54AA';
+    private const BLACK = 'FF000000';
     private const WHITE = 'FFFFFFFF';
-    private const DARK  = 'FF1A1A2E';
+    private const GRAY  = 'FF666666';
 
     public function downloadSlides(string $id)
     {
@@ -108,68 +107,34 @@ class StrategyController extends Controller
     {
         $slide = $prs->createSlide();
 
-        // Always set an explicit white background; title slide overrides to navy
         $bg = new \PhpOffice\PhpPresentation\Slide\Background\Color();
         $bg->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
         $slide->setBackground($bg);
 
         $isTitle = ($data['type'] ?? 'content') === 'title';
+        $title   = strval($data['title'] ?? '');
+        $bullets = array_values(array_filter(array_map('strval', $data['bullets'] ?? [])));
 
         if ($isTitle) {
-            // Navy background for title slide
-            $bgNav = new \PhpOffice\PhpPresentation\Slide\Background\Color();
-            $bgNav->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::NAVY));
-            $slide->setBackground($bgNav);
-
-            // Title
-            $this->addText($slide, $data['title'],
-                600000, 1800000, 7900000, 1400000, 36, true, self::WHITE, 'ctr');
-
-            // Subtitle bullets as one line in pink
-            if (!empty($data['bullets'])) {
-                $subtitle = is_array($data['bullets']) ? implode(' · ', array_map('strval', $data['bullets'])) : '';
-                if ($subtitle) {
-                    $this->addText($slide, $subtitle,
-                        600000, 3400000, 7900000, 600000, 18, false, self::PINK, 'ctr');
-                }
+            $this->addText($slide, $title, 600000, 1800000, 7900000, 1400000, 36, true, self::BLACK, 'ctr');
+            if (!empty($bullets)) {
+                $this->addText($slide, implode('  ·  ', $bullets), 600000, 3400000, 7900000, 600000, 18, false, self::GRAY, 'ctr');
             }
         } else {
-            // Navy header bar
-            $header = $slide->createRichTextShape();
-            $header->setOffsetX(0)->setOffsetY(0)->setWidth(9144000)->setHeight(800000);
-            $this->setFill($header, self::NAVY);
-            $run = $header->createTextRun(strval($data['title'] ?? ''));
-            $run->getFont()->setBold(true)->setSize(24)
-                ->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
-            $header->getActiveParagraph()->getAlignment()
-                ->setHorizontal('l')->setMarginLeft(500000);
+            // Slide title
+            $this->addText($slide, $title, 500000, 300000, 8100000, 700000, 28, true, self::BLACK);
+
+            // Thin separator line
+            $line = $slide->createLineShape(500000, 1050000, 8600000, 1050000);
+            $line->getBorder()->setColor(new \PhpOffice\PhpPresentation\Style\Color('FFCCCCCC'))->setLineWidth(1);
 
             // Bullet points
-            $bullets = array_slice(array_filter(array_map('strval', $data['bullets'] ?? [])), 0, 6);
-            $yStart  = 950000;
-            $yStep   = 600000;
-            foreach (array_values($bullets) as $i => $bullet) {
-                $this->addText($slide, '• ' . $bullet,
-                    500000, $yStart + $i * $yStep, 8100000, 560000, 18, false, self::DARK);
+            $yStart = 1200000;
+            $yStep  = 620000;
+            foreach (array_slice($bullets, 0, 6) as $i => $bullet) {
+                $this->addText($slide, '•  ' . $bullet, 500000, $yStart + $i * $yStep, 8100000, 580000, 18, false, self::BLACK);
             }
-
-            // Pink footer bar
-            $footer = $slide->createRichTextShape();
-            $footer->setOffsetX(0)->setOffsetY(4870000)->setWidth(9144000)->setHeight(280000);
-            $this->setFill($footer, self::PINK);
-            $run = $footer->createTextRun('Coral Intelligence Platform');
-            $run->getFont()->setSize(10)->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
-            $footer->getActiveParagraph()->getAlignment()
-                ->setHorizontal('l')->setMarginLeft(400000);
         }
-    }
-
-    private function setFill($shape, string $argb): void
-    {
-        $fill = new \PhpOffice\PhpPresentation\Style\Fill();
-        $fill->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
-             ->setStartColor(new \PhpOffice\PhpPresentation\Style\Color($argb));
-        $shape->setFill($fill);
     }
 
     private function addText($slide, string $text, int $x, int $y, int $w, int $h,
