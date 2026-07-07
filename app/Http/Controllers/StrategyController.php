@@ -6,18 +6,16 @@ use App\Models\Strategy;
 use Illuminate\Http\Request;
 use PhpOffice\PhpPresentation\PhpPresentation;
 use PhpOffice\PhpPresentation\IOFactory;
-use PhpOffice\PhpPresentation\Slide\Layout;
 use PhpOffice\PhpPresentation\Style\Color;
 use PhpOffice\PhpPresentation\Style\Alignment;
-use PhpOffice\PhpPresentation\Shape\RichText;
+use PhpOffice\PhpPresentation\Slide\Background\Color as BgColor;
 
 class StrategyController extends Controller
 {
-    // Navy #003470, Pink #FC54AA, White #FFFFFF, Light gray #F5F7FA
-    private const NAVY  = '003470';
-    private const PINK  = 'FC54AA';
+    // ARGB color constants
+    private const NAVY  = 'FF003470';
+    private const PINK  = 'FFFC54AA';
     private const WHITE = 'FFFFFFFF';
-    private const LIGHT = 'FFF5F7FA';
     private const DARK  = 'FF1A1A2E';
 
     public function downloadSlides(string $id)
@@ -128,8 +126,9 @@ STRATEGY DOCUMENT:
         $slide = $prs->createSlide();
 
         // Background
-        $bg = $slide->getBackground();
+        $bg = new BgColor();
         $bg->setColor(new Color($isFirst ? self::NAVY : self::WHITE));
+        $slide->setBackground($bg);
 
         $isTitle = ($data['type'] ?? 'content') === 'title';
 
@@ -144,17 +143,13 @@ STRATEGY DOCUMENT:
                 $this->addTextBox($slide,
                     text: implode(' · ', $data['bullets']),
                     x: 800000, y: 2900000, w: 7600000, h: 600000,
-                    size: 16, bold: false, color: 'FFFC54AA', align: Alignment::HORIZONTAL_CENTER
+                    size: 16, bold: false, color: self::PINK, align: Alignment::HORIZONTAL_CENTER
                 );
             }
             // Pink accent line
-            $line = $slide->createLineShape();
+            $line = $slide->createLineShape(800000, 2750000, 8400000, 2750000);
             $line->setLineColor(new Color(self::PINK));
             $line->setLineWidth(3);
-            $line->setOffsetX(800000);
-            $line->setOffsetY(2750000);
-            $line->setWidth(7600000);
-            $line->setHeight(0);
         } else {
             // White slide: navy header bar
             $header = $slide->createRichTextShape();
@@ -183,7 +178,7 @@ STRATEGY DOCUMENT:
             $footer = $slide->createRichTextShape();
             $footer->setOffsetX(0)->setOffsetY(4960000)->setWidth(9144000)->setHeight(270000);
             $footer->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
-                ->setStartColor(new Color('FF' . self::PINK));
+                ->setStartColor(new Color(self::PINK));
             $run = $footer->createTextRun('Coral Intelligence Platform');
             $run->getFont()->setSize(9)->setColor(new Color(self::WHITE));
             $footer->getActiveParagraph()->getAlignment()
