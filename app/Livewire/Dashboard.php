@@ -46,16 +46,19 @@ class Dashboard extends Component
             ? mb_substr($strategy->generated_document ?? json_encode($strategy->content), 0, 2000)
             : '(no approved strategy)';
 
-        $prompt = "You are a senior marketing strategist writing a performance executive summary for a client dashboard.\n\n"
-            . "CLIENT: {$this->client->name}\n\n"
-            . "STRATEGY SNAPSHOT:\n{$strategyText}\n\n"
-            . "CURRENT GOALS & PROGRESS:\n{$goalsText}\n\n"
-            . "Write 2–3 short paragraphs (no bullet points, flowing prose) that:\n"
-            . "1. Honestly assess current performance — what's working, what's not, what the numbers show\n"
-            . "2. Call out wins, risks, or gaps that need attention right now\n"
-            . "3. Give a clear sense of momentum — are things on track, ahead, or behind?\n\n"
-            . "Be direct and specific. Reference actual goal names and numbers. Avoid generic marketing language. "
-            . "Write as if briefing a CEO before a board meeting. Return only the summary text, no headers.";
+        $prompt = "You are briefing the executive suite of {$this->client->name} on current marketing performance.\n\n"
+            . "STRATEGY:\n{$strategyText}\n\n"
+            . "GOALS & PROGRESS:\n{$goalsText}\n\n"
+            . "Return a JSON object with exactly these fields:\n"
+            . "{\n"
+            . "  \"verdict\": \"one bold sentence — overall status (on track / at risk / behind / strong)\",\n"
+            . "  \"callouts\": [\n"
+            . "    { \"type\": \"win|risk|gap|watch\", \"headline\": \"5–8 word bold stat or finding\", \"detail\": \"one sentence of context\" },\n"
+            . "    ... (3–5 callouts total)\n"
+            . "  ],\n"
+            . "  \"bottom_line\": \"one sentence — what leadership needs to decide or act on right now\"\n"
+            . "}\n\n"
+            . "Be specific — use real goal names, numbers, percentages. No fluff. Return ONLY valid JSON.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
@@ -63,7 +66,11 @@ class Dashboard extends Component
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-haiku-4-5-20251001',
             );
-            $summary = $response->content[0]->text ?? '';
+            $raw = $response->content[0]->text ?? '{}';
+            $raw = preg_replace('/^```(?:json)?\s*/m', '', $raw);
+            $raw = preg_replace('/\s*```\s*$/m', '', $raw);
+            $decoded = json_decode(trim($raw), true);
+            $summary = ($decoded && isset($decoded['verdict'])) ? $raw : $raw;
             $this->client->update([
                 'executive_summary' => $summary,
                 'executive_summary_updated_at' => now(),

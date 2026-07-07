@@ -49,17 +49,47 @@
             </div>
 
             @if($client->executive_summary)
-                <p class="text-sm text-gray-600 leading-relaxed">{{ $client->executive_summary }}</p>
+                @php
+                    $execData = json_decode($client->executive_summary, true);
+                    $isStructured = is_array($execData) && isset($execData['verdict']);
+                    $typeConfig = [
+                        'win'   => ['bg' => 'bg-green-50',  'text' => 'text-green-700',  'dot' => 'bg-green-500',  'label' => 'Win'],
+                        'risk'  => ['bg' => 'bg-red-50',    'text' => 'text-red-700',    'dot' => 'bg-red-500',    'label' => 'Risk'],
+                        'gap'   => ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-700', 'dot' => 'bg-yellow-500', 'label' => 'Gap'],
+                        'watch' => ['bg' => 'bg-blue-50',   'text' => 'text-blue-700',   'dot' => 'bg-blue-500',   'label' => 'Watch'],
+                    ];
+                @endphp
 
-                @if($bulletLines->isNotEmpty())
-                    <ul class="mt-4 space-y-1.5">
-                        @foreach($bulletLines as $bullet)
-                            <li class="flex items-start gap-2 text-sm text-gray-600">
-                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#FC54AA] shrink-0"></span>
-                                <span>{{ $bullet }}</span>
-                            </li>
+                @if($isStructured)
+                    {{-- Verdict --}}
+                    <p class="text-sm font-semibold text-gray-900 leading-snug mb-4">{{ $execData['verdict'] }}</p>
+
+                    {{-- Callouts --}}
+                    <div class="space-y-2">
+                        @foreach($execData['callouts'] ?? [] as $callout)
+                            @php $cfg = $typeConfig[$callout['type']] ?? $typeConfig['watch']; @endphp
+                            <div class="flex items-start gap-3 rounded-lg {{ $cfg['bg'] }} px-3 py-2.5">
+                                <span class="mt-1.5 w-2 h-2 rounded-full {{ $cfg['dot'] }} shrink-0"></span>
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wide {{ $cfg['text'] }} mr-1.5">{{ $cfg['label'] }}</span>
+                                    <span class="text-sm font-semibold text-gray-900">{{ $callout['headline'] }}</span>
+                                    @if(!empty($callout['detail']))
+                                        <p class="text-xs text-gray-600 mt-0.5">{{ $callout['detail'] }}</p>
+                                    @endif
+                                </div>
+                            </div>
                         @endforeach
-                    </ul>
+                    </div>
+
+                    {{-- Bottom line --}}
+                    @if(!empty($execData['bottom_line']))
+                        <div class="mt-4 border-t border-gray-100 pt-3">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Bottom Line</p>
+                            <p class="text-sm text-gray-800">{{ $execData['bottom_line'] }}</p>
+                        </div>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-600 leading-relaxed">{{ $client->executive_summary }}</p>
                 @endif
 
                 @if($client->executive_summary_updated_at)
