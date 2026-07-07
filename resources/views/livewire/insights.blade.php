@@ -15,15 +15,14 @@
             <p class="text-sm text-gray-500 mt-1">External market intelligence and trends</p>
         </div>
         @if($isAgency)
-            <button wire:click="generate" wire:loading.attr="disabled" class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60">
-                <span wire:loading.remove wire:target="generate" class="flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-                    {{ $insights->isEmpty() ? 'Generate' : 'Refresh' }}
+            <button wire:click="generate" wire:loading.attr="disabled"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60 whitespace-nowrap">
+                <span class="relative inline-flex w-4 h-4 shrink-0">
+                    <svg wire:loading.remove wire:target="generate" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute inset-0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    <svg wire:loading wire:target="generate" class="animate-spin absolute inset-0" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 </span>
-                <span wire:loading wire:target="generate" class="flex items-center gap-1.5">
-                    <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                    Generating…
-                </span>
+                <span wire:loading.remove wire:target="generate">{{ $insights->isEmpty() ? 'Generate' : 'Refresh' }}</span>
+                <span wire:loading wire:target="generate">Generating…</span>
             </button>
         @endif
     </div>

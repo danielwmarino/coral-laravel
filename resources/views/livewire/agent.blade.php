@@ -128,8 +128,13 @@
                 style="field-sizing: content;"
             ></textarea>
             <button wire:click="send" wire:loading.attr="disabled" {{ $thinking ? 'disabled' : '' }}
-                class="flex items-center justify-center w-10 bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-xl transition-colors disabled:opacity-50 shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                class="flex items-center justify-center w-10 bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-xl transition-colors disabled:opacity-60 shrink-0">
+                <span wire:loading.remove wire:target="send">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </span>
+                <span wire:loading wire:target="send">
+                    <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                </span>
             </button>
         </div>
         <p class="text-xs text-gray-400 mt-2">Press Enter to send, Shift+Enter for new line</p>
