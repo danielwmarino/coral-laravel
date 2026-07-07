@@ -31,8 +31,8 @@
             class="fixed inset-y-0 left-0 z-30 w-60 bg-[#003470] flex flex-col transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-auto lg:z-auto"
         >
             {{-- Logo --}}
-            <div class="flex items-center h-16 px-6 flex-shrink-0">
-                <span class="text-[#FC54AA] text-2xl font-bold tracking-tight lowercase">coral</span>
+            <div class="flex items-center px-4 py-5 flex-shrink-0">
+                <img src="/Coral-Logo.png" alt="Coral" style="width:100px;height:auto;">
             </div>
 
             <div class="border-t border-white/10 mx-0"></div>
