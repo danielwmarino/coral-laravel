@@ -9,6 +9,8 @@ class ClientKnowledgeMeta extends Model
 {
     use HasUuids;
 
+    protected $table = 'client_knowledge_meta';
+
     protected $fillable = [
         'client_id', 'website_url', 'last_crawled_at', 'crawl_status',
         'crawl_page_count', 'summary_text', 'summary_updated_at',
