@@ -1,4 +1,4 @@
-<div class="space-y-6 max-w-4xl">
+<div class="space-y-6">
 
     @if(session('toast'))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
