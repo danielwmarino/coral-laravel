@@ -87,9 +87,9 @@ class AgentPage extends Component
         $system = "You are a digital marketing strategist assistant for {$this->client->name}. "
             . "Be concise, actionable, and specific. Use markdown for formatting.\n\n";
 
-        // Inject executive summary if available
-        if ($this->client->executive_summary) {
-            $system .= "CLIENT BRIEF:\n" . $this->client->executive_summary . "\n\n";
+        // Inject client brief (who they are) if available
+        if ($this->client->client_brief) {
+            $system .= "CLIENT BRIEF:\n" . $this->client->client_brief . "\n\n";
         }
 
         if ($strategy) {

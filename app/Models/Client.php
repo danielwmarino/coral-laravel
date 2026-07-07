@@ -14,10 +14,12 @@ class Client extends Model
     protected $fillable = [
         'name', 'slug', 'logo_url', 'strategist_message',
         'executive_summary', 'executive_summary_updated_at',
+        'client_brief', 'client_brief_updated_at',
     ];
 
     protected $casts = [
         'executive_summary_updated_at' => 'datetime',
+        'client_brief_updated_at'      => 'datetime',
         'created_at' => 'datetime',
     ];
 

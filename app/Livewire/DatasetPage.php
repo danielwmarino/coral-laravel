@@ -70,45 +70,73 @@ class DatasetPage extends Component
 
         $this->generatingSummary = true;
         $this->summaryError = '';
-        set_time_limit(120);
+        set_time_limit(180);
 
+        // Fetch website content for "who is this client"
+        $websiteUrl = $this->client->knowledgeMeta?->website_url ?? '';
+        $websiteContent = '';
+        if ($websiteUrl) {
+            $context = stream_context_create([
+                'http' => ['timeout' => 10, 'user_agent' => 'Mozilla/5.0 (compatible; CoralBot/1.0)'],
+                'ssl'  => ['verify_peer' => false],
+            ]);
+            $html = @file_get_contents($websiteUrl, false, $context);
+            if ($html) {
+                $text = strip_tags(preg_replace('/<(script|style|nav|header|footer)[^>]*>.*?<\/\1>/si', '', $html));
+                $websiteContent = mb_substr(preg_replace('/\s+/', ' ', trim($text)), 0, 3000);
+            }
+        }
+
+        // Pull in any uploaded document chunks as additional context
+        $docContext = '';
+        $docChunks = \App\Models\KnowledgeChunk::where('client_id', $this->client->id)
+            ->where('source_type', 'document')
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get();
+        if ($docChunks->isNotEmpty()) {
+            $docContext = $docChunks->map(fn($c) => "[{$c->source_label}]: " . mb_substr($c->chunk_text, 0, 400))->join("\n---\n");
+        }
+
+        // Strategy for additional context
         $strategy = \App\Models\Strategy::where('client_id', $this->client->id)
             ->where('status', 'approved')->latest()->first();
-        $goals = \App\Models\Goal::where('client_id', $this->client->id)
-            ->where('archived', false)->get();
-
         $strategyText = $strategy
-            ? mb_substr($strategy->generated_document ?? json_encode($strategy->content), 0, 3000)
-            : '(no approved strategy)';
+            ? mb_substr($strategy->generated_document ?? json_encode($strategy->content), 0, 2000)
+            : '';
 
-        $goalsText = $goals->isNotEmpty()
-            ? $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n")
-            : '(no goals set)';
-
-        $prompt = "You are a senior marketing strategist writing a performance executive summary for {$this->client->name}.\n\n"
-            . "APPROVED STRATEGY:\n{$strategyText}\n\n"
-            . "CURRENT GOALS & PROGRESS:\n{$goalsText}\n\n"
-            . "Write 2–3 short paragraphs (no bullet points, flowing prose) that:\n"
-            . "1. Honestly assess current performance — what's working, what's not, what the numbers show\n"
-            . "2. Call out wins, risks, or gaps that need attention right now\n"
-            . "3. Give a clear sense of momentum — are things on track, ahead, or behind?\n\n"
-            . "Be direct and specific. Reference actual goal names and numbers. Avoid generic marketing language. "
-            . "Write as if briefing a CEO before a board meeting. Return only the summary text, no headers.";
+        $prompt = "You are creating a client brief that will be injected as background context into every AI conversation about this client.\n\n"
+            . "CLIENT: {$this->client->name}\n"
+            . ($websiteUrl ? "WEBSITE: {$websiteUrl}\n" : '')
+            . "\n"
+            . ($websiteContent ? "WEBSITE CONTENT:\n{$websiteContent}\n\n" : '')
+            . ($docContext ? "UPLOADED DOCUMENTS:\n{$docContext}\n\n" : '')
+            . ($strategyText ? "APPROVED MARKETING STRATEGY:\n{$strategyText}\n\n" : '')
+            . "Write a client brief structured as follows:\n"
+            . "1. WHO THEY ARE (2-3 sentences): A quick, factual summary of what {$this->client->name} does, who they serve, and what makes them distinct. Written so anyone reading it instantly understands the company.\n"
+            . "2. SERVICES & OFFERINGS: Key products/services they provide.\n"
+            . "3. TARGET AUDIENCE & ICP: Who their ideal customers are — industry, company size, role, pain points.\n"
+            . "4. BRAND & POSITIONING: How they position themselves in the market, their tone of voice, differentiators.\n"
+            . "5. MARKETING CONTEXT: Their current marketing focus, channels, and strategic priorities (from the strategy if available).\n\n"
+            . "Use these exact section headers. Be specific and factual — pull real details from the website content. "
+            . "This brief will be read by an AI assistant before every conversation, so make it dense with useful context, not generic filler. "
+            . "Return only the brief, no preamble.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
-                maxTokens: 1000,
+                maxTokens: 1500,
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-haiku-4-5-20251001',
             );
-            $summary = $response->content[0]->text ?? '';
+            $brief = $response->content[0]->text ?? '';
             $this->client->update([
-                'executive_summary' => $summary,
-                'executive_summary_updated_at' => now(),
+                'client_brief'            => $brief,
+                'client_brief_updated_at' => now(),
             ]);
             $this->client->refresh();
+            session()->flash('toast', 'Client brief generated');
         } catch (\Exception $e) {
-            $this->summaryError = 'Failed to generate summary: ' . $e->getMessage();
+            $this->summaryError = 'Failed to generate brief: ' . $e->getMessage();
         }
 
         $this->generatingSummary = false;
