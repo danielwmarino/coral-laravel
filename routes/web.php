@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StrategyController;
 
 // Public: redirect root to login
 Route::get('/', fn () => redirect()->route('login'));
@@ -16,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/strategy', fn () => view('strategy.index'))->name('strategy');
     Route::get('/strategy/new', fn () => view('strategy.new'))->name('strategy.new');
+    Route::get('/strategy/{strategy}/slides', [StrategyController::class, 'downloadSlides'])->name('strategy.slides');
 
     Route::get('/goals', fn () => view('goals.index'))->name('goals.index');
     Route::get('/goals/{goal}', fn ($goal) => view('goals.show', ['goalId' => $goal]))->name('goals.show');
