@@ -12,6 +12,12 @@
     @if($generateError)
         <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ $generateError }}</div>
     @endif
+    @if($polling)
+        <div wire:poll.3s="checkGenerated" class="flex items-center gap-3 p-3 bg-pink-50 border border-pink-100 rounded-lg text-sm text-pink-700">
+            <svg class="animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Generating goals with AI… this may take up to 30 seconds
+        </div>
+    @endif
 
     {{-- Header --}}
     <div class="flex items-center justify-between">
