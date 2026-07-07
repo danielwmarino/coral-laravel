@@ -92,12 +92,12 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </div>
                         @if($isLast)
-                            <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                            <div class="agent-message max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
                                 <span x-html="revealText ? revealText.replace(/\n/g, '<br>') : {{ json_encode(\Illuminate\Support\Str::markdown($msg['content'])) }}"></span>
                                 <span x-show="revealText && revealText.length < {{ strlen($msg['content']) }}" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
                             </div>
                         @else
-                            <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                            <div class="agent-message max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
                                 {!! \Illuminate\Support\Str::markdown($msg['content']) !!}
                             </div>
                         @endif
