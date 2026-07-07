@@ -108,48 +108,59 @@ class StrategyController extends Controller
     {
         $slide = $prs->createSlide();
 
+        // Always set an explicit white background; title slide overrides to navy
         $bg = new \PhpOffice\PhpPresentation\Slide\Background\Color();
-        $bg->setColor(new \PhpOffice\PhpPresentation\Style\Color($isFirst ? self::NAVY : self::WHITE));
+        $bg->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
         $slide->setBackground($bg);
 
         $isTitle = ($data['type'] ?? 'content') === 'title';
 
         if ($isTitle) {
+            // Navy background for title slide
+            $bgNav = new \PhpOffice\PhpPresentation\Slide\Background\Color();
+            $bgNav->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::NAVY));
+            $slide->setBackground($bgNav);
+
+            // Title
             $this->addText($slide, $data['title'],
-                800000, 1500000, 7600000, 1200000, 36, true, self::WHITE, 'ctr');
+                600000, 1800000, 7900000, 1400000, 36, true, self::WHITE, 'ctr');
+
+            // Subtitle bullets as one line in pink
             if (!empty($data['bullets'])) {
-                $this->addText($slide, implode(' · ', $data['bullets']),
-                    800000, 2900000, 7600000, 600000, 16, false, self::PINK, 'ctr');
+                $subtitle = is_array($data['bullets']) ? implode(' · ', array_map('strval', $data['bullets'])) : '';
+                if ($subtitle) {
+                    $this->addText($slide, $subtitle,
+                        600000, 3400000, 7900000, 600000, 18, false, self::PINK, 'ctr');
+                }
             }
-            // Pink accent line via border on a line shape
-            $line = $slide->createLineShape(800000, 2750000, 8400000, 2750000);
-            $line->getBorder()
-                ->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::PINK))
-                ->setLineWidth(3);
         } else {
+            // Navy header bar
             $header = $slide->createRichTextShape();
-            $header->setOffsetX(0)->setOffsetY(0)->setWidth(9144000)->setHeight(700000);
+            $header->setOffsetX(0)->setOffsetY(0)->setWidth(9144000)->setHeight(800000);
             $this->setFill($header, self::NAVY);
-            $run = $header->createTextRun($data['title']);
-            $run->getFont()->setBold(true)->setSize(22)
+            $run = $header->createTextRun(strval($data['title'] ?? ''));
+            $run->getFont()->setBold(true)->setSize(24)
                 ->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
             $header->getActiveParagraph()->getAlignment()
-                ->setHorizontal('l')->setMarginLeft(400000);
+                ->setHorizontal('l')->setMarginLeft(500000);
 
-            $yStart = 850000;
-            $yStep  = 550000;
-            foreach (array_slice($data['bullets'] ?? [], 0, 6) as $i => $bullet) {
+            // Bullet points
+            $bullets = array_slice(array_filter(array_map('strval', $data['bullets'] ?? [])), 0, 6);
+            $yStart  = 950000;
+            $yStep   = 600000;
+            foreach (array_values($bullets) as $i => $bullet) {
                 $this->addText($slide, '• ' . $bullet,
-                    600000, $yStart + $i * $yStep, 7900000, 500000, 16, false, self::DARK);
+                    500000, $yStart + $i * $yStep, 8100000, 560000, 18, false, self::DARK);
             }
 
+            // Pink footer bar
             $footer = $slide->createRichTextShape();
-            $footer->setOffsetX(0)->setOffsetY(4960000)->setWidth(9144000)->setHeight(270000);
+            $footer->setOffsetX(0)->setOffsetY(4870000)->setWidth(9144000)->setHeight(280000);
             $this->setFill($footer, self::PINK);
             $run = $footer->createTextRun('Coral Intelligence Platform');
-            $run->getFont()->setSize(9)->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
+            $run->getFont()->setSize(10)->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
             $footer->getActiveParagraph()->getAlignment()
-                ->setHorizontal('l')->setMarginLeft(300000);
+                ->setHorizontal('l')->setMarginLeft(400000);
         }
     }
 
