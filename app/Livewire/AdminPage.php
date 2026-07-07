@@ -12,6 +12,8 @@ class AdminPage extends Component
     public string $newClientName = '';
     public string $newClientSlug = '';
     public bool $addingClient = false;
+    public string $clientMessage = '';
+    public string $clientError = '';
 
     // Invite (display-only for now — no email infra)
     public string $inviteEmail = '';
@@ -37,6 +39,8 @@ class AdminPage extends Component
             $slug = $base . '-' . $i++;
         }
 
+        $this->clientMessage = '';
+        $this->clientError = '';
         try {
             Client::create([
                 'name' => trim($this->newClientName),
@@ -44,9 +48,9 @@ class AdminPage extends Component
             ]);
             $this->newClientName = '';
             $this->newClientSlug = '';
-            session()->flash('toast', 'Client added');
+            $this->clientMessage = 'Client added successfully!';
         } catch (\Exception $e) {
-            session()->flash('toast', 'Error: ' . $e->getMessage());
+            $this->clientError = 'Error: ' . $e->getMessage();
         }
     }
 
