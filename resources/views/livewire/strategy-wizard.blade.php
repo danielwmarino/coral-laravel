@@ -3,6 +3,9 @@
     @if(session('error'))
         <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ session('error') }}</div>
     @endif
+    @if($generateError)
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ $generateError }}</div>
+    @endif
 
     {{-- Progress bar --}}
     <div class="mb-6">
