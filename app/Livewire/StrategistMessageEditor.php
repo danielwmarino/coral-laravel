@@ -28,9 +28,20 @@ class StrategistMessageEditor extends Component
     {
         if (!auth()->user()->isAgency()) return;
 
-        $this->validate(['message' => 'nullable|string|max:5000']);
+        $this->validate(['message' => 'nullable|string|max:10000']);
 
         $this->client->update(['strategist_message' => $this->message]);
+        $this->editing = false;
+        session()->flash('message', 'Strategist message saved.');
+    }
+
+    public function saveHtml(string $html): void
+    {
+        if (!auth()->user()->isAgency()) return;
+
+        $clean = strip_tags($html, '<p><br><strong><em><u><ul><ol><li><h1><h2><h3><blockquote>');
+        $this->message = $clean;
+        $this->client->update(['strategist_message' => $clean]);
         $this->editing = false;
         session()->flash('message', 'Strategist message saved.');
     }

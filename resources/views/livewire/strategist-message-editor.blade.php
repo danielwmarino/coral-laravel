@@ -1,16 +1,40 @@
 <div class="w-full">
     @if($editing)
-        {{-- Edit mode --}}
-        <div class="mt-1">
-            <textarea
-                wire:model="message"
-                rows="5"
-                placeholder="Write a message for your client..."
-                class="w-full text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FC54AA]/30 focus:border-[#FC54AA] resize-none"
-            ></textarea>
+        {{-- Edit mode: Quill rich text editor --}}
+        <div
+            x-data="{
+                quill: null,
+                init() {
+                    this.quill = new Quill(this.$refs.editor, {
+                        theme: 'snow',
+                        placeholder: 'Write a message for your client...',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                [{ list: 'ordered' }, { list: 'bullet' }],
+                                ['clean']
+                            ]
+                        }
+                    });
+                    // Load existing content
+                    const existing = @js($client->strategist_message ?? '');
+                    if (existing) {
+                        this.quill.clipboard.dangerouslyPasteHTML(existing);
+                    }
+                },
+                saveContent() {
+                    const html = this.$refs.editor.querySelector('.ql-editor').innerHTML;
+                    $wire.saveHtml(html);
+                }
+            }"
+            class="mt-1"
+        >
+            {{-- Quill editor container --}}
+            <div x-ref="editor" class="bg-white rounded-lg border border-gray-200 text-sm text-gray-700" style="min-height: 140px;"></div>
+
             <div class="flex gap-2 mt-2">
                 <button
-                    wire:click="save"
+                    @click="saveContent()"
                     class="px-3 py-1.5 bg-[#FC54AA] hover:bg-[#E0429A] text-white text-xs font-medium rounded-lg transition-colors"
                 >
                     Save
@@ -23,6 +47,17 @@
                 </button>
             </div>
         </div>
+
+        {{-- Quill CSS + JS (loaded only when editing) --}}
+        <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+
+        <style>
+            .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; border-color: #e5e7eb; }
+            .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; border-color: #e5e7eb; font-size: 0.875rem; }
+            .ql-editor { min-height: 120px; color: #374151; }
+            .ql-editor.ql-blank::before { color: #d1d5db; font-style: italic; }
+        </style>
     @else
         {{-- View mode (agency sees edit button) --}}
         <button
@@ -35,7 +70,7 @@
 
         <div class="mt-2">
             @if($client->strategist_message)
-                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ $client->strategist_message }}</p>
+                <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
             @else
                 <p class="text-sm text-gray-300 italic">No message written yet. Click Edit to add one.</p>
             @endif

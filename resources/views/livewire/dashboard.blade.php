@@ -29,32 +29,43 @@
                 <h2 class="text-sm font-semibold text-[#003470]">Message from your Strategist</h2>
             </div>
             @if($isAgency)
-                <p class="text-xs text-gray-400 mb-3">Lines starting with <code class="bg-gray-100 px-1 rounded">-</code> will also appear as bullet points in the Executive Summary below.</p>
                 @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
             @else
                 @if($client->strategist_message)
-                    @php
-                        $nonBulletLines = collect(explode("\n", $client->strategist_message))
-                            ->reject(fn($l) => str_starts_with(ltrim($l), '-'))
-                            ->join("\n");
-                    @endphp
-                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ trim($nonBulletLines) ?: $client->strategist_message }}</p>
+                    <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
                 @else
                     <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
                 @endif
             @endif
         </div>
 
-        {{-- ── 3. EXECUTIVE SUMMARY ── --}}
-        @php
-            $strategistMessage = $client->strategist_message ?? '';
-            $bulletLines = collect(explode("\n", $strategistMessage))
-                ->filter(fn($l) => str_starts_with(ltrim($l), '-'))
-                ->map(fn($l) => ltrim(ltrim($l), '-\ '))
-                ->filter()
-                ->values();
-        @endphp
+        {{-- ── 3. DATA OVERVIEW ── --}}
+        <div class="mb-6">
+            <div class="flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <h2 class="text-sm font-semibold text-[#003470]">Data Overview</h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Goals</p>
+                    <p class="text-3xl font-bold mt-2 text-[#003470]">{{ $stats['total'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">In Progress</p>
+                    <p class="text-3xl font-bold mt-2 text-blue-500">{{ $stats['in_progress'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Completed</p>
+                    <p class="text-3xl font-bold mt-2 text-emerald-500">{{ $stats['completed'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">At Risk</p>
+                    <p class="text-3xl font-bold mt-2 text-rose-500">{{ $stats['at_risk'] }}</p>
+                </div>
+            </div>
+        </div>
 
+        {{-- ── 4. EXECUTIVE SUMMARY ── --}}
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
@@ -122,46 +133,10 @@
                 <p class="text-sm text-gray-300 italic">
                     {{ $isAgency ? 'No summary yet — click Regenerate to generate one with AI.' : 'No summary available yet.' }}
                 </p>
-                @if($bulletLines->isNotEmpty())
-                    <ul class="mt-4 space-y-1.5">
-                        @foreach($bulletLines as $bullet)
-                            <li class="flex items-start gap-2 text-sm text-gray-600">
-                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#FC54AA] shrink-0"></span>
-                                <span>{{ $bullet }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
             @endif
         </div>
 
-        {{-- ── 3. DATA OVERVIEW ── --}}
-        <div class="mb-2">
-            <div class="flex items-center gap-2 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                <h2 class="text-sm font-semibold text-[#003470]">Data Overview</h2>
-            </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Goals</p>
-                    <p class="text-3xl font-bold mt-2 text-[#003470]">{{ $stats['total'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">In Progress</p>
-                    <p class="text-3xl font-bold mt-2 text-blue-500">{{ $stats['in_progress'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Completed</p>
-                    <p class="text-3xl font-bold mt-2 text-emerald-500">{{ $stats['completed'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">At Risk</p>
-                    <p class="text-3xl font-bold mt-2 text-rose-500">{{ $stats['at_risk'] }}</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- ── 4. GOALS ── --}}
+        {{-- ── 5. GOALS ── --}}
         <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
