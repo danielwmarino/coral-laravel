@@ -1,20 +1,26 @@
 <div class="flex flex-col h-full overflow-hidden"
-    x-data="{ streamText: '', streamInterval: null }"
+    x-data="{ revealText: '', revealInterval: null }"
     x-init="
-        $watch('$wire.thinking', val => {
-            if (val) {
-                streamText = '';
-                streamInterval = setInterval(async () => {
-                    const chunk = await $wire.getStreamChunk();
-                    if (chunk) { streamText = chunk; $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }); }
-                }, 300);
+        $watch('$wire.messages', (msgs) => {
+            clearInterval(revealInterval);
+            revealText = '';
+            const last = msgs[msgs.length - 1];
+            if (last && last.role === 'assistant') {
+                const words = last.content.split(' ');
+                let i = 0;
+                revealInterval = setInterval(() => {
+                    if (i < words.length) {
+                        revealText += (i > 0 ? ' ' : '') + words[i++];
+                        $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight });
+                    } else {
+                        clearInterval(revealInterval);
+                        revealText = last.content;
+                    }
+                }, 18);
             } else {
-                clearInterval(streamInterval);
-                streamText = '';
                 $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight });
             }
         });
-        $watch('$wire.messages', () => { $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }) });
     ">
 
     {{-- Header --}}
@@ -39,7 +45,7 @@
                 <p class="text-xs text-gray-400 max-w-xs">Get AI-powered advice on your strategy, goals, campaigns, and marketing performance.</p>
             </div>
         @else
-            @foreach($messages as $msg)
+            @foreach($messages as $i => $msg)
                 @if($msg['role'] === 'user')
                     <div class="flex justify-end">
                         <div class="max-w-[75%] bg-[#003470] text-white text-sm px-4 py-3 rounded-2xl rounded-br-sm leading-relaxed">
@@ -47,13 +53,21 @@
                         </div>
                     </div>
                 @else
+                    @php $isLast = $i === count($messages) - 1; @endphp
                     <div class="flex gap-3 items-start">
                         <div class="w-7 h-7 rounded-full bg-[#FCE4F1] flex items-center justify-center shrink-0 mt-0.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </div>
-                        <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
-                            {!! \Illuminate\Support\Str::markdown($msg['content']) !!}
-                        </div>
+                        @if($isLast)
+                            <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                                <span x-html="revealText ? revealText.replace(/\n/g, '<br>') : {{ json_encode(\Illuminate\Support\Str::markdown($msg['content'])) }}"></span>
+                                <span x-show="revealText && revealText.length < {{ strlen($msg['content']) }}" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
+                            </div>
+                        @else
+                            <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                                {!! \Illuminate\Support\Str::markdown($msg['content']) !!}
+                            </div>
+                        @endif
                     </div>
                 @endif
             @endforeach
@@ -63,10 +77,7 @@
                     <div class="w-7 h-7 rounded-full bg-[#FCE4F1] flex items-center justify-center shrink-0 mt-0.5">
                         <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                     </div>
-                    <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
-                        <span x-show="streamText === ''" class="text-gray-400">Thinking…</span>
-                        <span x-show="streamText !== ''" x-html="streamText.replace(/\n/g, '<br>')"></span><span x-show="streamText !== ''" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
-                    </div>
+                    <div class="bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-400">Thinking…</div>
                 </div>
             @endif
         @endif
