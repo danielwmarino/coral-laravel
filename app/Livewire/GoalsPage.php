@@ -87,7 +87,7 @@ class GoalsPage extends Component
         $prompt = "Based on the following approved digital marketing strategy, suggest new SMART goals not already covered by the client's existing goals.\n\n"
             . "STRATEGY:\n{$strategyText}\n\n"
             . "EXISTING GOALS (do not duplicate):\n{$existingText}\n\n"
-            . "Return a JSON array of at most 5 new goals. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
+            . "Return a JSON array of at most 6 new goals. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
             . "Keep descriptions under 100 characters. Keep smart_details values under 80 characters each. "
             . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array, no other text.";
 
@@ -165,8 +165,13 @@ class GoalsPage extends Component
                 // Uncheck existing → archive
                 Goal::find($item['goalId'])?->update(['archived' => true]);
             } elseif (!$item['isExisting'] && $checked) {
-                // New suggestion checked → insert
                 $s = $item['suggestion'];
+                preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
+                $targetValue = isset($m[0]) ? (float) $m[0] : 0;
+                $dueDate = null;
+                if (!empty($s['due_date'])) {
+                    try { $dueDate = \Carbon\Carbon::parse($s['due_date'])->toDateString(); } catch (\Exception $e) {}
+                }
                 $goal = Goal::create([
                     'client_id'    => $this->client->id,
                     'strategy_id'  => $this->approvedStrategy()->id,
@@ -174,12 +179,13 @@ class GoalsPage extends Component
                     'description'  => $s['description'] ?? null,
                     'smart_details' => $s['smart_details'] ?? null,
                     'metric_type'  => $s['metric_type'] ?? 'number',
-                    'target_value' => $s['target_value'] ?? 0,
-                    'due_date'     => $s['due_date'] ?? null,
+                    'target_value' => $targetValue,
+                    'due_date'     => $dueDate,
                     'status'       => 'not_started',
                 ]);
-                foreach (($s['tasks'] ?? []) as $taskTitle) {
-                    Task::create(['goal_id' => $goal->id, 'title' => $taskTitle]);
+                foreach (($s['tasks'] ?? []) as $task) {
+                    $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
+                    if ($title) Task::create(['goal_id' => $goal->id, 'title' => $title]);
                 }
             }
         }
