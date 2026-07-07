@@ -115,21 +115,31 @@ class GoalsPage extends Component
             return;
         }
 
-        $this->suggestionsJson = json_encode($suggestions);
-
-        $items = [];
-        foreach ($existingGoals->where('archived', false) as $g) {
-            $items[] = ['title' => $g->title, 'description' => $g->description, 'goalId' => $g->id, 'isExisting' => true];
+        $strategy = $this->approvedStrategy();
+        $added = 0;
+        foreach ($suggestions as $s) {
+            preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
+            $goal = Goal::create([
+                'client_id'    => $this->client->id,
+                'strategy_id'  => $strategy?->id,
+                'title'        => $s['title'],
+                'description'  => $s['description'] ?? null,
+                'smart_details' => $s['smart_details'] ?? [],
+                'metric_type'  => $s['metric_type'] ?? 'number',
+                'target_value' => isset($m[0]) ? (float) $m[0] : 0,
+                'due_date'     => !empty($s['due_date']) ? (function($d) { try { return \Carbon\Carbon::parse($d)->toDateString(); } catch (\Exception $e) { return null; } })($s['due_date']) : null,
+                'status'       => 'not_started',
+            ]);
+            foreach (($s['tasks'] ?? []) as $task) {
+                $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
+                if ($title) Task::create(['goal_id' => $goal->id, 'client_id' => $this->client->id, 'title' => $title]);
+            }
+            $added++;
         }
-        foreach ($suggestions as $i => $s) {
-            $items[] = ['title' => $s['title'], 'description' => mb_substr($s['description'] ?? '', 0, 100), 'suggestionIndex' => $i, 'isExisting' => false];
-        }
 
-        $this->reviewItems = $items;
-        $this->reviewChecked = collect($items)->map(fn($item) => $item['isExisting'])->toArray();
-        $this->reviewOpen = true;
         $this->generating = false;
         $this->polling = false;
+        session()->flash('toast', $added > 0 ? "{$added} goals added from strategy" : 'No new goals — existing goals already cover the strategy');
     }
 
     public function checkGenerated(): void
