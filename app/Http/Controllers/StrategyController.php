@@ -154,8 +154,7 @@ STRATEGY DOCUMENT:
             // White slide: navy header bar
             $header = $slide->createRichTextShape();
             $header->setOffsetX(0)->setOffsetY(0)->setWidth(9144000)->setHeight(700000);
-            $header->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
-                ->setStartColor(new Color(self::NAVY));
+            $this->solidFill($header, self::NAVY);
             $run = $header->createTextRun($data['title']);
             $run->getFont()->setBold(true)->setSize(22)->setColor(new Color(self::WHITE));
             $header->getActiveParagraph()->getAlignment()
@@ -177,8 +176,7 @@ STRATEGY DOCUMENT:
             // Pink footer bar
             $footer = $slide->createRichTextShape();
             $footer->setOffsetX(0)->setOffsetY(4960000)->setWidth(9144000)->setHeight(270000);
-            $footer->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
-                ->setStartColor(new Color(self::PINK));
+            $this->solidFill($footer, self::PINK);
             $run = $footer->createTextRun('Coral Intelligence Platform');
             $run->getFont()->setSize(9)->setColor(new Color(self::WHITE));
             $footer->getActiveParagraph()->getAlignment()
@@ -187,12 +185,19 @@ STRATEGY DOCUMENT:
         }
     }
 
+    private function solidFill($shape, string $argbColor): void
+    {
+        $fill = new \PhpOffice\PhpPresentation\Style\Fill();
+        $fill->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_SOLID)
+             ->setStartColor(new Color($argbColor));
+        $shape->setFill($fill);
+    }
+
     private function addTextBox($slide, string $text, int $x, int $y, int $w, int $h,
                                 int $size, bool $bold, string $color, string $align = Alignment::HORIZONTAL_LEFT): void
     {
         $shape = $slide->createRichTextShape();
         $shape->setOffsetX($x)->setOffsetY($y)->setWidth($w)->setHeight($h);
-        $shape->getFill()->setFillType(\PhpOffice\PhpPresentation\Style\Fill::FILL_NONE);
         $run = $shape->createTextRun($text);
         $run->getFont()->setSize($size)->setBold($bold)->setColor(new Color($color));
         $shape->getActiveParagraph()->getAlignment()->setHorizontal($align);
