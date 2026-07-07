@@ -87,10 +87,10 @@
                     $execData = json_decode($client->executive_summary, true);
                     $isStructured = is_array($execData) && isset($execData['verdict']);
                     $typeConfig = [
-                        'win'   => ['bg' => 'bg-green-50',  'text' => 'text-green-700',  'dot' => 'bg-green-500',  'label' => 'Win'],
-                        'risk'  => ['bg' => 'bg-red-50',    'text' => 'text-red-700',    'dot' => 'bg-red-500',    'label' => 'Risk'],
-                        'gap'   => ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-700', 'dot' => 'bg-yellow-500', 'label' => 'Gap'],
-                        'watch' => ['bg' => 'bg-blue-50',   'text' => 'text-blue-700',   'dot' => 'bg-blue-500',   'label' => 'Watch'],
+                        'win'   => ['text' => 'text-green-600',  'dot' => 'bg-green-500',  'label' => 'Win'],
+                        'risk'  => ['text' => 'text-red-600',    'dot' => 'bg-red-500',    'label' => 'Risk'],
+                        'gap'   => ['text' => 'text-yellow-600', 'dot' => 'bg-yellow-500', 'label' => 'Gap'],
+                        'watch' => ['text' => 'text-blue-600',   'dot' => 'bg-blue-500',   'label' => 'Watch'],
                     ];
                 @endphp
 
@@ -102,7 +102,7 @@
                     <div class="space-y-2">
                         @foreach($execData['callouts'] ?? [] as $callout)
                             @php $cfg = $typeConfig[$callout['type']] ?? $typeConfig['watch']; @endphp
-                            <div class="flex items-start gap-3 rounded-lg {{ $cfg['bg'] }} px-3 py-2.5">
+                            <div class="flex items-start gap-3 rounded-lg border border-gray-200 px-3 py-2.5">
                                 <span class="mt-1.5 w-2 h-2 rounded-full {{ $cfg['dot'] }} shrink-0"></span>
                                 <div>
                                     <span class="text-xs font-bold uppercase tracking-wide {{ $cfg['text'] }} mr-1.5">{{ $cfg['label'] }}</span>
