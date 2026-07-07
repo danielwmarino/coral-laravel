@@ -1,17 +1,5 @@
 <div class="w-full">
     @if($editing)
-        {{-- Quill CSS + JS must load before Alpine init() runs --}}
-        <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
-
-        <style>
-            .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; border-color: #e5e7eb; }
-            .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; border-color: #e5e7eb; font-size: 0.875rem; }
-            .ql-editor { min-height: 120px; color: #374151; }
-            .ql-editor.ql-blank::before { color: #d1d5db; font-style: italic; }
-        </style>
-
-        {{-- Edit mode: Quill rich text editor --}}
         <div
             x-data="{
                 quill: null,
@@ -41,7 +29,7 @@
             }"
             class="mt-1"
         >
-            <div x-ref="editor" class="bg-white rounded-lg border border-gray-200 text-sm text-gray-700"></div>
+            <div x-ref="editor" class="bg-white rounded-lg text-sm text-gray-700"></div>
 
             <div class="flex gap-2 mt-2">
                 <button
@@ -59,7 +47,6 @@
             </div>
         </div>
     @else
-        {{-- View mode (agency sees edit button) --}}
         <button
             wire:click="startEditing"
             class="text-xs font-medium text-[#FC54AA] hover:text-[#E0429A] transition-colors flex items-center gap-1"
