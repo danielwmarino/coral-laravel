@@ -97,9 +97,17 @@ class GoalsPage extends Component
                 model: 'claude-haiku-4-5-20251001',
             );
             $raw = $response->content[0]->text ?? '[]';
-            $raw = preg_replace('/^```(?:json)?\s*/i', '', trim($raw));
-            $raw = preg_replace('/\s*```$/i', '', $raw);
-            $suggestions = json_decode($raw, true) ?? [];
+            // Strip markdown code fences
+            $raw = trim($raw);
+            $raw = preg_replace('/^```(?:json)?\s*/i', '', $raw);
+            $raw = preg_replace('/\s*```\s*$/i', '', $raw);
+            $raw = trim($raw);
+            $suggestions = json_decode($raw, true);
+            if (!is_array($suggestions)) {
+                $this->generateError = 'AI returned unexpected format. Raw: ' . mb_substr($raw, 0, 300);
+                $this->generating = false;
+                return;
+            }
         } catch (\Exception $e) {
             $this->generateError = 'Failed to generate goals: ' . $e->getMessage();
             $this->generating = false;
