@@ -62,6 +62,7 @@
                         $pc = $priorityConfig[$priority];
                         $body = $insight->content['body'] ?? '';
                         $why = $insight->content['why'] ?? '';
+                        $sources = $insight->content['sources'] ?? [];
                         $effort = $insight->content['effort'] ?? null;
                         $impact = $insight->content['impact'] ?? null;
                     @endphp
@@ -109,6 +110,23 @@
 
                                 @if($why)
                                     <p class="text-xs text-gray-500 leading-relaxed"><span class="font-semibold text-gray-600">Why: </span>{{ $why }}</p>
+                                @endif
+
+                                @if(!empty($sources))
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($sources as $source)
+                                            @if(!empty($source['url']) && !empty($source['label']))
+                                                <a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer"
+                                                   class="inline-flex items-center gap-1 text-xs text-[#003470] hover:text-[#FC54AA] transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                                    {{ $source['label'] }}
+                                                </a>
+                                                @if(!$loop->last)
+                                                    <span class="text-gray-200">·</span>
+                                                @endif
+                                            @endif
+                                        @endforeach
+                                    </div>
                                 @endif
 
                                 @if($effort || $impact)

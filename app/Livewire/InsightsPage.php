@@ -32,8 +32,10 @@ class InsightsPage extends Component
 
         $prompt = "You are a senior digital marketing analyst. Generate 6 external market insights relevant to {$this->client->name}.\n\n"
             . "Each insight should be an observation about industry trends, competitive landscape, or market opportunities — not internal recommendations.\n\n"
-            . "Return a JSON array of 6 insights sorted by priority (high first), each: {title, body, why, category (SEO|Paid|Content|Social|Email|Analytics|Industry), priority (high|medium|low), effort (low|medium|high), impact (low|medium|high)}. "
-            . "'body' is the insight observation (2-4 sentences). 'why' explains why this matters strategically for the client (1-3 sentences). Return ONLY the JSON array.";
+            . "Return a JSON array of 6 insights sorted by priority (high first), each: {title, body, why, sources, category (SEO|Paid|Content|Social|Email|Analytics|Industry), priority (high|medium|low), effort (low|medium|high), impact (low|medium|high)}. "
+            . "'body' is the insight observation (2-4 sentences). 'why' explains why this matters strategically for the client (1-3 sentences). "
+            . "'sources' is an array of 1-3 objects: {label, url} — real, publicly accessible URLs from authoritative sources (Google blog, Search Engine Journal, HubSpot, Moz, Semrush blog, industry publications, etc.) that back up this insight. Only include URLs you are confident exist. "
+            . "Return ONLY the JSON array.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
@@ -54,10 +56,11 @@ class InsightsPage extends Component
                     'priority'  => $item['priority'] ?? 'medium',
                     'category'  => $item['category'] ?? null,
                     'content'   => [
-                        'body'   => $item['body'] ?? '',
-                        'why'    => $item['why'] ?? '',
-                        'effort' => $item['effort'] ?? 'medium',
-                        'impact' => $item['impact'] ?? 'medium',
+                        'body'    => $item['body'] ?? '',
+                        'why'     => $item['why'] ?? '',
+                        'sources' => $item['sources'] ?? [],
+                        'effort'  => $item['effort'] ?? 'medium',
+                        'impact'  => $item['impact'] ?? 'medium',
                     ],
                 ]);
             }
