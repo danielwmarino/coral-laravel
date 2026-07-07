@@ -63,8 +63,21 @@ class InsightsPage extends Component
         $this->generating = false;
     }
 
-    public function saveInsight(string $id): void { Insight::find($id)?->update(['saved' => true]); }
-    public function dismissInsight(string $id): void { Insight::find($id)?->update(['dismissed' => true]); }
+    public function saveInsight(string $id): void
+    {
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['saved' => true]);
+        session()->flash('toast', 'Insight saved');
+    }
+
+    public function unsaveInsight(string $id): void
+    {
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['saved' => false]);
+    }
+
+    public function dismissInsight(string $id): void
+    {
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['dismissed' => true]);
+    }
 
     public function render(): \Illuminate\View\View
     {

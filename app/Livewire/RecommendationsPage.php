@@ -73,12 +73,18 @@ class RecommendationsPage extends Component
 
     public function saveRec(string $id): void
     {
-        Insight::find($id)?->update(['saved' => true]);
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['saved' => true]);
+        session()->flash('toast', 'Recommendation saved');
+    }
+
+    public function unsaveRec(string $id): void
+    {
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['saved' => false]);
     }
 
     public function dismissRec(string $id): void
     {
-        Insight::find($id)?->update(['dismissed' => true]);
+        Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['dismissed' => true]);
     }
 
     public function render(): \Illuminate\View\View

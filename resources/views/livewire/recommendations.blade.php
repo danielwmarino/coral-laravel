@@ -62,14 +62,14 @@
                             @endif
                         </div>
                         <div class="flex gap-1 shrink-0">
-                            @if(!$rec->saved)
+                            @if($rec->saved)
+                                <button wire:click="unsaveRec('{{ $rec->id }}')" title="Unsave" class="p-1 text-[#FC54AA] hover:text-gray-400 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                                </button>
+                            @else
                                 <button wire:click="saveRec('{{ $rec->id }}')" title="Save" class="p-1 text-gray-400 hover:text-[#FC54AA] transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                                 </button>
-                            @else
-                                <span class="p-1 text-[#FC54AA]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                                </span>
                             @endif
                             <button wire:click="dismissRec('{{ $rec->id }}')" title="Dismiss" class="p-1 text-gray-300 hover:text-gray-500 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
