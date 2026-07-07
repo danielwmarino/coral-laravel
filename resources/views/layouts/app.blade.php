@@ -38,7 +38,7 @@
             <div class="border-t border-white/10 mx-0"></div>
 
             {{-- Client label + switcher --}}
-            <div class="px-3 py-3">
+            <div class="px-3 pt-3 pb-3">
                 <p class="text-white/40 text-[10px] font-semibold uppercase tracking-widest px-1 mb-2">Client</p>
                 @livewire('client-switcher')
             </div>
@@ -53,7 +53,7 @@
                     <x-nav-item route="strategy" icon="file-text" label="Strategy" />
                     <x-nav-item route="goals.index" icon="target" label="Goals" />
 
-                    <li class="border-t border-white/10 my-1.5 -mx-3"></li>
+                    <li class="py-2"><div class="border-t border-white/10 -mx-3"></div></li>
 
                     @if(auth()->user()->isAgency())
                         <x-nav-item route="agent" icon="bot" label="Agent" />
@@ -62,7 +62,7 @@
                     <x-nav-item route="recommendations" icon="lightbulb" label="Recommendations" />
                     <x-nav-item route="insights" icon="trending-up" label="Insights" />
 
-                    <li class="border-t border-white/10 my-1.5 -mx-3"></li>
+                    <li class="py-2"><div class="border-t border-white/10 -mx-3"></div></li>
 
                     <x-nav-item route="dataset" icon="database" label="Data Set" />
 
