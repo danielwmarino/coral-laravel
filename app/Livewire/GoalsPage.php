@@ -185,7 +185,7 @@ class GoalsPage extends Component
                 ]);
                 foreach (($s['tasks'] ?? []) as $task) {
                     $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
-                    if ($title) Task::create(['goal_id' => $goal->id, 'title' => $title]);
+                    if ($title) Task::create(['goal_id' => $goal->id, 'client_id' => $this->client->id, 'title' => $title]);
                 }
             }
         }
