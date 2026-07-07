@@ -38,12 +38,12 @@
             <div class="border-t border-white/10 mx-0"></div>
 
             {{-- Client label + switcher --}}
-            <div class="px-4 pt-4 pb-1">
-                <p class="text-white/40 text-[10px] font-semibold uppercase tracking-widest mb-2">Client</p>
+            <div class="px-3 py-3">
+                <p class="text-white/40 text-[10px] font-semibold uppercase tracking-widest px-1 mb-2">Client</p>
                 @livewire('client-switcher')
             </div>
 
-            <div class="border-t border-white/10 mx-0 mt-2"></div>
+            <div class="border-t border-white/10 mx-0"></div>
 
             {{-- Navigation --}}
             <nav class="flex-1 py-3 overflow-y-auto">
@@ -53,12 +53,17 @@
                     <x-nav-item route="strategy" icon="file-text" label="Strategy" />
                     <x-nav-item route="goals.index" icon="target" label="Goals" />
 
+                    <li class="border-t border-white/10 my-1.5 -mx-3"></li>
+
                     @if(auth()->user()->isAgency())
                         <x-nav-item route="agent" icon="bot" label="Agent" />
                     @endif
 
                     <x-nav-item route="recommendations" icon="lightbulb" label="Recommendations" />
                     <x-nav-item route="insights" icon="trending-up" label="Insights" />
+
+                    <li class="border-t border-white/10 my-1.5 -mx-3"></li>
+
                     <x-nav-item route="dataset" icon="database" label="Data Set" />
 
                     @if(auth()->user()->isSuperAdmin())
@@ -104,7 +109,7 @@
             </header>
 
             {{-- Page content --}}
-            <main class="flex-1 overflow-hidden flex flex-col">
+            <main class="flex-1 flex flex-col min-h-0">
                 @if(isset($fullHeight) && $fullHeight)
                     {{ $slot }}
                 @else

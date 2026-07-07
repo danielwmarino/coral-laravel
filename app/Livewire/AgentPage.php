@@ -78,18 +78,32 @@ class AgentPage extends Component
             }
         }
 
+        set_time_limit(120);
+        $streamKey = 'agent_stream_' . auth()->id();
+        cache()->forget($streamKey);
+
         try {
-            $response = app(\Anthropic\Client::class)->messages->create(
+            $reply = '';
+            $stream = app(\Anthropic\Client::class)->messages->stream(
                 maxTokens: 1500,
                 messages: collect($this->messages)->map(fn($m) => ['role' => $m['role'], 'content' => $m['content']])->toArray(),
                 model: 'claude-sonnet-4-6',
                 system: $system,
             );
-            $reply = $response->content[0]->text ?? 'Sorry, I could not respond.';
+            foreach ($stream as $response) {
+                if ($response->type === 'content_block_delta' && isset($response->delta->text)) {
+                    $reply .= $response->delta->text;
+                    cache()->put($streamKey, $reply, 120);
+                }
+            }
+            if (empty($reply)) {
+                $reply = $stream->getResponse()->content[0]->text ?? 'Sorry, I could not respond.';
+            }
         } catch (\Exception $e) {
             $reply = 'Error: ' . $e->getMessage();
         }
 
+        cache()->forget($streamKey);
         $this->messages[] = ['role' => 'assistant', 'content' => $reply];
         $this->thinking = false;
 
@@ -105,6 +119,11 @@ class AgentPage extends Component
             ]);
             $this->conversationId = $conv->id;
         }
+    }
+
+    public function getStreamChunk(): string
+    {
+        return cache()->get('agent_stream_' . auth()->id(), '');
     }
 
     public function clearChat(): void

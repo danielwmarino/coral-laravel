@@ -1,4 +1,21 @@
-<div class="flex flex-col h-full overflow-hidden" x-data="{}" x-init="$watch('$wire.messages', () => { $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }) })">
+<div class="flex flex-col h-full overflow-hidden"
+    x-data="{ streamText: '', streamInterval: null }"
+    x-init="
+        $watch('$wire.thinking', val => {
+            if (val) {
+                streamText = '';
+                streamInterval = setInterval(async () => {
+                    const chunk = await $wire.getStreamChunk();
+                    if (chunk) { streamText = chunk; $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }); }
+                }, 300);
+            } else {
+                clearInterval(streamInterval);
+                streamText = '';
+                $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight });
+            }
+        });
+        $watch('$wire.messages', () => { $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }) });
+    ">
 
     {{-- Header --}}
     <div class="shrink-0 h-12 border-b border-gray-100 flex items-center justify-between px-6">
@@ -43,10 +60,13 @@
 
             @if($thinking)
                 <div class="flex gap-3 items-start">
-                    <div class="w-7 h-7 rounded-full bg-[#FCE4F1] flex items-center justify-center shrink-0">
+                    <div class="w-7 h-7 rounded-full bg-[#FCE4F1] flex items-center justify-center shrink-0 mt-0.5">
                         <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                     </div>
-                    <div class="bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-400">Thinking…</div>
+                    <div class="max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                        <span x-show="streamText === ''" class="text-gray-400">Thinking…</span>
+                        <span x-show="streamText !== ''" x-html="streamText.replace(/\n/g, '<br>')"></span><span x-show="streamText !== ''" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
+                    </div>
                 </div>
             @endif
         @endif
