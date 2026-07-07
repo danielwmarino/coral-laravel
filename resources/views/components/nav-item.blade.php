@@ -9,8 +9,8 @@
         href="{{ route($route) }}"
         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                {{ $active
-                    ? 'bg-[#FCE4F1] text-[#003470] border-l-4 border-[#FC54AA]'
-                    : 'text-white/80 hover:bg-white/10 hover:text-white' }}"
+                    ? 'bg-[#FC54AA]/20 text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white' }}"
     >
         {{-- Inline SVG icons keyed by name --}}
         @switch($icon)

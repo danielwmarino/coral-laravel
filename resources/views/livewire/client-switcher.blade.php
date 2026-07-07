@@ -1,4 +1,4 @@
-<div class="px-3 py-3 border-b border-white/10">
+<div>
     @if($isAgency && $clients->count() > 0)
         <div x-data="{ open: false }" class="relative">
             <button

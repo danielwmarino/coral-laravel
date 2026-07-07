@@ -31,15 +31,22 @@
             class="fixed inset-y-0 left-0 z-30 w-60 bg-[#003470] flex flex-col transition-transform duration-200 lg:translate-x-0 lg:static lg:inset-auto lg:z-auto"
         >
             {{-- Logo --}}
-            <div class="flex items-center h-16 px-6 border-b border-white/10 flex-shrink-0">
-                <span class="text-white text-xl font-bold tracking-wide">Coral</span>
+            <div class="flex items-center h-16 px-6 flex-shrink-0">
+                <span class="text-[#FC54AA] text-2xl font-bold tracking-tight lowercase">coral</span>
             </div>
 
-            {{-- Client Switcher --}}
-            @livewire('client-switcher')
+            <div class="border-t border-white/10 mx-0"></div>
+
+            {{-- Client label + switcher --}}
+            <div class="px-4 pt-4 pb-1">
+                <p class="text-white/40 text-[10px] font-semibold uppercase tracking-widest mb-2">Client</p>
+                @livewire('client-switcher')
+            </div>
+
+            <div class="border-t border-white/10 mx-0 mt-2"></div>
 
             {{-- Navigation --}}
-            <nav class="flex-1 py-4 overflow-y-auto">
+            <nav class="flex-1 py-3 overflow-y-auto">
                 <ul class="space-y-0.5 px-3">
 
                     <x-nav-item route="dashboard" icon="layout-dashboard" label="Dashboard" />
