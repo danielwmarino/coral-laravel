@@ -108,32 +108,31 @@ class StrategyController extends Controller
         $title   = strval($data['title'] ?? '');
         $bullets = array_values(array_filter(array_map('strval', $data['bullets'] ?? [])));
 
+        // Slide is 960×540 px
         if ($isTitle) {
             $t = $slide->createRichTextShape();
-            $t->setOffsetX(600000)->setOffsetY(1800000)->setWidth(7900000)->setHeight(1400000);
+            $t->setOffsetX(60)->setOffsetY(180)->setWidth(840)->setHeight(150);
             $run = $t->createTextRun($title);
             $run->getFont()->setBold(true)->setSize(36);
             $t->getActiveParagraph()->getAlignment()->setHorizontal('ctr');
 
             if (!empty($bullets)) {
                 $s = $slide->createRichTextShape();
-                $s->setOffsetX(600000)->setOffsetY(3400000)->setWidth(7900000)->setHeight(600000);
+                $s->setOffsetX(60)->setOffsetY(350)->setWidth(840)->setHeight(60);
                 $s->createTextRun(implode('  ·  ', $bullets));
                 $s->getActiveParagraph()->getAlignment()->setHorizontal('ctr');
             }
         } else {
-            // Title
             $t = $slide->createRichTextShape();
-            $t->setOffsetX(500000)->setOffsetY(300000)->setWidth(8100000)->setHeight(700000);
+            $t->setOffsetX(50)->setOffsetY(30)->setWidth(860)->setHeight(70);
             $run = $t->createTextRun($title);
             $run->getFont()->setBold(true)->setSize(28);
 
-            // Bullets — one shape per bullet
-            $yStart = 1200000;
-            $yStep  = 620000;
+            $yStart = 120;
+            $yStep  = 65;
             foreach (array_slice($bullets, 0, 6) as $i => $bullet) {
                 $b = $slide->createRichTextShape();
-                $b->setOffsetX(500000)->setOffsetY($yStart + $i * $yStep)->setWidth(8100000)->setHeight(580000);
+                $b->setOffsetX(50)->setOffsetY($yStart + $i * $yStep)->setWidth(860)->setHeight(60);
                 $b->createTextRun('•  ' . $bullet);
             }
         }
