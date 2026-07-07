@@ -91,16 +91,28 @@
                         <div class="w-7 h-7 rounded-full bg-[#FCE4F1] flex items-center justify-center shrink-0 mt-0.5">
                             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </div>
-                        @if($isLast)
-                            <div class="agent-message max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
-                                <span x-html="revealText ? revealText.replace(/\n/g, '<br>') : {{ json_encode(\Illuminate\Support\Str::markdown($msg['content'])) }}"></span>
-                                <span x-show="revealText && revealText.length < {{ strlen($msg['content']) }}" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
+                        <div x-data="{ copied: false }" class="group max-w-[75%]">
+                            <div class="agent-message bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                                @if($isLast)
+                                    <span x-html="revealText ? revealText.replace(/\n/g, '<br>') : {{ json_encode(\Illuminate\Support\Str::markdown($msg['content'])) }}"></span>
+                                    <span x-show="revealText && revealText.length < {{ strlen($msg['content']) }}" class="inline-block w-0.5 h-4 bg-[#FC54AA] animate-pulse ml-0.5 align-middle"></span>
+                                @else
+                                    {!! \Illuminate\Support\Str::markdown($msg['content']) !!}
+                                @endif
                             </div>
-                        @else
-                            <div class="agent-message max-w-[75%] bg-gray-50 text-sm px-4 py-3 rounded-2xl rounded-tl-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
-                                {!! \Illuminate\Support\Str::markdown($msg['content']) !!}
+                            <div class="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button @click="navigator.clipboard.writeText({{ json_encode($msg['content']) }}); copied = true; setTimeout(() => copied = false, 2000)"
+                                    class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors px-1 py-0.5 rounded">
+                                    <template x-if="!copied">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    </template>
+                                    <template x-if="copied">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </template>
+                                    <span x-text="copied ? 'Copied' : 'Copy'" :class="copied ? 'text-green-500' : ''"></span>
+                                </button>
                             </div>
-                        @endif
+                        </div>
                     </div>
                 @endif
             @endforeach
