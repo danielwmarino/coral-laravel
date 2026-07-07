@@ -10,9 +10,11 @@ class ClientSwitcher extends Component
 {
     public ?string $selectedClientId = null;
     public string $selectedClientName = 'Select Client';
+    public string $pageUrl = '';
 
     public function mount(): void
     {
+        $this->pageUrl = url()->current();
         $user = auth()->user();
 
         if ($user->isClientUser()) {
@@ -56,8 +58,7 @@ class ClientSwitcher extends Component
         $this->selectedClientName = $client->name;
         Session::put('active_client_id', $client->id);
 
-        // Reload the current page to refresh all data for the new client
-        $this->redirect(request()->url());
+        $this->redirect($this->pageUrl ?: route('dashboard'));
     }
 
     public function render(): \Illuminate\View\View
