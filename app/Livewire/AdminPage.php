@@ -30,18 +30,24 @@ class AdminPage extends Component
             'newClientName' => 'required|string|max:255',
         ]);
 
-        if (!$this->newClientSlug) {
-            $this->newClientSlug = strtolower(preg_replace('/[^a-z0-9-]/', '', str_replace(' ', '-', strtolower($this->newClientName))));
+        $base = strtolower(preg_replace('/[^a-z0-9-]/', '', str_replace(' ', '-', strtolower($this->newClientName))));
+        $slug = $this->newClientSlug ?: $base;
+        $i = 1;
+        while (Client::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $i++;
         }
 
-        Client::create([
-            'name' => trim($this->newClientName),
-            'slug' => trim($this->newClientSlug),
-        ]);
-
-        $this->newClientName = '';
-        $this->newClientSlug = '';
-        session()->flash('toast', 'Client added');
+        try {
+            Client::create([
+                'name' => trim($this->newClientName),
+                'slug' => $slug,
+            ]);
+            $this->newClientName = '';
+            $this->newClientSlug = '';
+            session()->flash('toast', 'Client added');
+        } catch (\Exception $e) {
+            session()->flash('toast', 'Error: ' . $e->getMessage());
+        }
     }
 
     public function updateUserRole(string $userId, string $role, ?string $clientId): void
