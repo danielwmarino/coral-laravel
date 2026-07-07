@@ -36,7 +36,8 @@ class RecommendationsPage extends Component
             : '(no goals set)';
 
         $prompt = "You are a digital marketing strategist. Based on the following client goals, generate 6 actionable marketing recommendations.\n\nCLIENT: {$this->client->name}\nGOALS:\n{$goalsText}\n\n"
-            . "Return a JSON array of exactly 6 recommendations, each: {title, body, category (SEO|Paid|Content|Social|Email|Analytics|CRO), priority (high|medium|low), effort (low|medium|high), impact (low|medium|high)}. Return ONLY the JSON array.";
+            . "Return a JSON array of exactly 6 recommendations sorted by priority (high first). Each object: {title, body, why, category (SEO|Paid|Content|Social|Email|Analytics|CRO), priority (high|medium|low), effort (low|medium|high), impact (low|medium|high)}. "
+            . "'body' is the actionable recommendation (2-4 sentences). 'why' explains the strategic reasoning and what happens if ignored (1-3 sentences). Return ONLY the JSON array.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
@@ -58,6 +59,7 @@ class RecommendationsPage extends Component
                     'category'  => $item['category'] ?? null,
                     'content'   => [
                         'body'   => $item['body'] ?? '',
+                        'why'    => $item['why'] ?? '',
                         'effort' => $item['effort'] ?? 'medium',
                         'impact' => $item['impact'] ?? 'medium',
                     ],
@@ -97,7 +99,8 @@ class RecommendationsPage extends Component
                 ->get()
             : collect();
 
+        $client = $this->client;
         $isAgency = auth()->user()->isAgency();
-        return view('livewire.recommendations', compact('recs', 'isAgency'));
+        return view('livewire.recommendations', compact('recs', 'isAgency', 'client'));
     }
 }

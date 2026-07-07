@@ -12,13 +12,13 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-[#003470]">Recommendations</h1>
-            <p class="text-sm text-gray-500 mt-1">AI-generated marketing recommendations</p>
+            <p class="text-sm text-gray-500 mt-1">AI-generated actions to improve {{ $client?->name }}'s marketing performance</p>
         </div>
         @if($isAgency)
             <button wire:click="generate" wire:loading.attr="disabled" class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60">
                 <span wire:loading.remove wire:target="generate" class="flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    {{ $recs->isEmpty() ? 'Generate Recommendations' : 'Regenerate' }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.21"/></svg>
+                    {{ $recs->isEmpty() ? 'Generate' : 'Refresh' }}
                 </span>
                 <span wire:loading wire:target="generate" class="flex items-center gap-1.5">
                     <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -36,55 +36,92 @@
         </div>
     @else
         @php
+            $priorityOrder = ['high', 'medium', 'low'];
+            $priorityGroups = ['high' => [], 'medium' => [], 'low' => []];
+            foreach ($recs as $rec) {
+                $p = $rec->priority ?? 'medium';
+                if (isset($priorityGroups[$p])) $priorityGroups[$p][] = $rec;
+            }
             $priorityConfig = [
-                'high'   => 'bg-red-50 text-red-700',
-                'medium' => 'bg-yellow-50 text-yellow-700',
-                'low'    => 'bg-gray-100 text-gray-600',
+                'high'   => ['label' => 'High',   'arrow' => '↑', 'color' => 'text-red-600',    'dot' => 'bg-red-500'],
+                'medium' => ['label' => 'Medium',  'arrow' => '→', 'color' => 'text-yellow-600', 'dot' => 'bg-yellow-400'],
+                'low'    => ['label' => 'Low',     'arrow' => '↓', 'color' => 'text-gray-400',   'dot' => 'bg-gray-300'],
             ];
             $categoryColors = [
                 'SEO' => 'bg-green-50 text-green-700', 'Paid' => 'bg-blue-50 text-blue-700',
                 'Content' => 'bg-purple-50 text-purple-700', 'Social' => 'bg-pink-50 text-pink-700',
                 'Email' => 'bg-yellow-50 text-yellow-700', 'Analytics' => 'bg-[#FCE4F1] text-[#a61040]',
-                'CRO' => 'bg-teal-50 text-teal-700',
+                'CRO' => 'bg-teal-50 text-teal-700', 'Schema' => 'bg-indigo-50 text-indigo-700',
+                'AEO' => 'bg-orange-50 text-orange-700',
             ];
         @endphp
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @foreach($recs as $rec)
-                @php $body = $rec->content['body'] ?? ''; $effort = $rec->content['effort'] ?? '—'; $impact = $rec->content['impact'] ?? '—'; @endphp
-                <div class="bg-white border border-gray-100 rounded-xl p-5 space-y-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            @if($rec->priority)
-                                <span class="text-xs px-1.5 py-0.5 rounded {{ $priorityConfig[$rec->priority] ?? 'bg-gray-100 text-gray-600' }} capitalize">{{ $rec->priority }}</span>
-                            @endif
-                            @if($rec->category)
-                                <span class="text-xs px-1.5 py-0.5 rounded {{ $categoryColors[$rec->category] ?? 'bg-gray-100 text-gray-600' }}">{{ $rec->category }}</span>
-                            @endif
-                        </div>
-                        <div class="flex gap-1 shrink-0">
-                            @if($rec->saved)
-                                <button wire:click="unsaveRec('{{ $rec->id }}')" title="Unsave" class="p-1 text-[#FC54AA] hover:text-gray-400 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                                </button>
-                            @else
-                                <button wire:click="saveRec('{{ $rec->id }}')" title="Save" class="p-1 text-gray-400 hover:text-[#FC54AA] transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                                </button>
-                            @endif
-                            <button wire:click="dismissRec('{{ $rec->id }}')" title="Dismiss" class="p-1 text-gray-300 hover:text-gray-500 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
+
+        <div class="space-y-3">
+            @foreach($priorityOrder as $priority)
+                @foreach($priorityGroups[$priority] as $rec)
+                    @php
+                        $pc = $priorityConfig[$priority];
+                        $body = $rec->content['body'] ?? '';
+                        $why = $rec->content['why'] ?? '';
+                        $effort = $rec->content['effort'] ?? null;
+                        $impact = $rec->content['impact'] ?? null;
+                    @endphp
+                    <div class="bg-white border border-gray-100 rounded-xl p-6">
+                        <div class="flex items-start gap-5">
+                            {{-- Priority column --}}
+                            <div class="flex flex-col items-center gap-0.5 shrink-0 w-12 pt-0.5">
+                                <span class="text-base font-bold {{ $pc['color'] }}">{{ $pc['arrow'] }}</span>
+                                <span class="text-xs font-semibold {{ $pc['color'] }}">{{ $pc['label'] }}</span>
+                            </div>
+
+                            {{-- Content --}}
+                            <div class="flex-1 min-w-0 space-y-2.5">
+                                {{-- Title row --}}
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-start gap-2 flex-wrap flex-1">
+                                        <h3 class="text-sm font-semibold text-gray-900 leading-snug">{{ $rec->title }}</h3>
+                                        @if($rec->category)
+                                            <span class="text-xs px-2 py-0.5 rounded-md {{ $categoryColors[$rec->category] ?? 'bg-gray-100 text-gray-600' }} shrink-0 font-medium">{{ $rec->category }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-3 shrink-0 text-xs">
+                                        <span class="text-gray-400">{{ $rec->created_at->format('n/j/Y') }}</span>
+                                        @if($rec->saved)
+                                            <button wire:click="unsaveRec('{{ $rec->id }}')" class="flex items-center gap-1 text-[#FC54AA] hover:text-gray-400 transition-colors font-medium">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                                                Save
+                                            </button>
+                                        @else
+                                            <button wire:click="saveRec('{{ $rec->id }}')" class="flex items-center gap-1 text-gray-400 hover:text-[#FC54AA] transition-colors font-medium">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                                                Save
+                                            </button>
+                                        @endif
+                                        <button wire:click="dismissRec('{{ $rec->id }}')" class="flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                            Dismiss
+                                        </button>
+                                    </div>
+                                </div>
+
+                                @if($body)
+                                    <p class="text-sm text-gray-700 leading-relaxed">{{ $body }}</p>
+                                @endif
+
+                                @if($why)
+                                    <p class="text-xs text-gray-500 leading-relaxed"><span class="font-semibold text-gray-600">Why: </span>{{ $why }}</p>
+                                @endif
+
+                                @if($effort || $impact)
+                                    <div class="flex gap-4 text-xs text-gray-400 pt-2 border-t border-gray-50">
+                                        @if($effort)<span>Effort: <span class="capitalize font-medium text-gray-600">{{ $effort }}</span></span>@endif
+                                        @if($impact)<span>Impact: <span class="capitalize font-medium text-gray-600">{{ $impact }}</span></span>@endif
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
-                    <p class="text-sm font-semibold text-gray-900">{{ $rec->title }}</p>
-                    @if($body)
-                        <p class="text-sm text-gray-600 leading-relaxed">{{ $body }}</p>
-                    @endif
-                    <div class="flex gap-4 text-xs text-gray-400 pt-1 border-t border-gray-50">
-                        <span>Effort: <span class="capitalize text-gray-600">{{ $effort }}</span></span>
-                        <span>Impact: <span class="capitalize text-gray-600">{{ $impact }}</span></span>
-                    </div>
-                </div>
+                @endforeach
             @endforeach
         </div>
     @endif
