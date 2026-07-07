@@ -1,6 +1,5 @@
 <div>
 
-    {{-- Flash message --}}
     @if (session()->has('message'))
         <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
             {{ session('message') }}
@@ -8,7 +7,6 @@
     @endif
 
     @if (!$client)
-        {{-- No client assigned / selected --}}
         <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
             <div class="w-16 h-16 rounded-full bg-[#FCE4F1] flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -18,98 +16,113 @@
         </div>
     @else
 
-        {{-- Page header --}}
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-[#003470]">Dashboard</h1>
-            <p class="text-sm text-gray-400 mt-0.5">{{ $client->name }}</p>
+        {{-- ── 1. HEADER ── --}}
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-[#003470]">{{ $client->name }}</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Marketing intelligence overview</p>
         </div>
 
-        {{-- ── STAT CARDS ── --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {{-- ── 2. EXECUTIVE SUMMARY ── --}}
+        @php
+            $strategistMessage = $client->strategist_message ?? '';
+            $bulletLines = collect(explode("\n", $strategistMessage))
+                ->filter(fn($l) => str_starts_with(ltrim($l), '-'))
+                ->map(fn($l) => ltrim(ltrim($l), '-\ '))
+                ->filter()
+                ->values();
+        @endphp
 
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Goals</p>
-                <p class="text-3xl font-bold mt-2 text-[#003470]">{{ $stats['total'] }}</p>
-            </div>
-
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">In Progress</p>
-                <p class="text-3xl font-bold mt-2 text-blue-500">{{ $stats['in_progress'] }}</p>
-            </div>
-
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Completed</p>
-                <p class="text-3xl font-bold mt-2 text-emerald-500">{{ $stats['completed'] }}</p>
-            </div>
-
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">At Risk</p>
-                <p class="text-3xl font-bold mt-2 text-rose-500">{{ $stats['at_risk'] }}</p>
-            </div>
-
-        </div>
-
-        {{-- ── EXECUTIVE SUMMARY + STRATEGIST MESSAGE ── --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-            {{-- Executive Summary --}}
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-[#003470] uppercase tracking-wide">Executive Summary</h2>
-                    @if($isAgency)
-                        <button
-                            wire:click="regenerateSummary"
-                            wire:loading.attr="disabled"
-                            class="flex items-center gap-1.5 text-xs font-medium text-[#FC54AA] hover:text-[#E0429A] transition-colors disabled:opacity-50"
-                        >
-                            <svg wire:loading wire:target="regenerateSummary" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            <svg wire:loading.remove wire:target="regenerateSummary" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-4.49"/></svg>
-                            Regenerate
-                        </button>
-                    @endif
-                </div>
-                @if($client->executive_summary)
-                    <p class="text-sm text-gray-600 leading-relaxed">{{ $client->executive_summary }}</p>
-                    @if($client->executive_summary_updated_at)
-                        <p class="text-xs text-gray-300 mt-3">Updated {{ $client->executive_summary_updated_at->diffForHumans() }}</p>
-                    @endif
-                @else
-                    <p class="text-sm text-gray-300 italic">
-                        {{ $isAgency ? 'No summary yet. Click Regenerate to generate one with AI.' : 'No summary available yet.' }}
-                    </p>
-                @endif
-            </div>
-
-            {{-- Strategist Message --}}
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-[#003470] uppercase tracking-wide">Message from your Strategist</h2>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <h2 class="text-sm font-semibold text-[#003470]">Executive Summary</h2>
                 </div>
                 @if($isAgency)
-                    @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
-                @else
-                    @if($client->strategist_message)
-                        <p class="text-sm text-gray-600 leading-relaxed">{{ $client->strategist_message }}</p>
-                    @else
-                        <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
-                    @endif
+                    <button wire:click="regenerateSummary" wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-1.5 text-xs font-medium text-[#FC54AA] hover:text-[#E0429A] transition-colors disabled:opacity-50">
+                        <svg wire:loading wire:target="regenerateSummary" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        <svg wire:loading.remove wire:target="regenerateSummary" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.08-4.49"/></svg>
+                        Regenerate
+                    </button>
                 @endif
             </div>
 
+            @if($client->executive_summary)
+                <p class="text-sm text-gray-600 leading-relaxed">{{ $client->executive_summary }}</p>
+
+                @if($bulletLines->isNotEmpty())
+                    <ul class="mt-4 space-y-1.5">
+                        @foreach($bulletLines as $bullet)
+                            <li class="flex items-start gap-2 text-sm text-gray-600">
+                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#FC54AA] shrink-0"></span>
+                                <span>{{ $bullet }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @if($client->executive_summary_updated_at)
+                    <p class="text-xs text-gray-300 mt-4">Generated {{ $client->executive_summary_updated_at->format('M j, Y, g:i A') }}</p>
+                @endif
+            @else
+                <p class="text-sm text-gray-300 italic">
+                    {{ $isAgency ? 'No summary yet — click Regenerate to generate one with AI.' : 'No summary available yet.' }}
+                </p>
+                @if($bulletLines->isNotEmpty())
+                    <ul class="mt-4 space-y-1.5">
+                        @foreach($bulletLines as $bullet)
+                            <li class="flex items-start gap-2 text-sm text-gray-600">
+                                <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#FC54AA] shrink-0"></span>
+                                <span>{{ $bullet }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            @endif
         </div>
 
-        {{-- ── GOAL CARDS GRID ── --}}
+        {{-- ── 3. DATA OVERVIEW ── --}}
+        <div class="mb-2">
+            <div class="flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <h2 class="text-sm font-semibold text-[#003470]">Data Overview</h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Goals</p>
+                    <p class="text-3xl font-bold mt-2 text-[#003470]">{{ $stats['total'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">In Progress</p>
+                    <p class="text-3xl font-bold mt-2 text-blue-500">{{ $stats['in_progress'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Completed</p>
+                    <p class="text-3xl font-bold mt-2 text-emerald-500">{{ $stats['completed'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">At Risk</p>
+                    <p class="text-3xl font-bold mt-2 text-rose-500">{{ $stats['at_risk'] }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── 4. GOALS ── --}}
         <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-[#003470] uppercase tracking-wide">Active Goals</h2>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                <h2 class="text-sm font-semibold text-[#003470]">Goals</h2>
+            </div>
             @if($stats['total'] > 0)
-                <a href="{{ route('goals.index') }}" class="text-xs text-[#FC54AA] hover:text-[#E0429A] font-medium transition-colors">
-                    View all →
+                <a href="{{ route('goals.index') }}" class="inline-flex items-center gap-1 text-xs text-[#FC54AA] hover:text-[#E0429A] font-medium transition-colors">
+                    View all <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </a>
             @endif
         </div>
 
         @if($goals->isEmpty())
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center mb-8">
                 <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                 </div>
@@ -119,7 +132,7 @@
                 @endif
             </div>
         @else
-            <div class="space-y-3">
+            <div class="space-y-3 mb-8">
                 @foreach($goals as $goal)
                     @php
                         $statusColors = ['not_started'=>'bg-gray-100 text-gray-600','in_progress'=>'bg-blue-50 text-blue-700','completed'=>'bg-green-50 text-green-700','at_risk'=>'bg-red-50 text-red-600'];
@@ -159,6 +172,29 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- ── 5. MESSAGE FROM STRATEGIST ── --}}
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+            <div class="flex items-center gap-2 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <h2 class="text-sm font-semibold text-[#003470]">Message from your Strategist</h2>
+            </div>
+            @if($isAgency)
+                <p class="text-xs text-gray-400 mb-3">Lines starting with <code class="bg-gray-100 px-1 rounded">-</code> will also appear as bullet points in the Executive Summary above.</p>
+                @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
+            @else
+                @if($client->strategist_message)
+                    @php
+                        $nonBulletLines = collect(explode("\n", $client->strategist_message))
+                            ->reject(fn($l) => str_starts_with(ltrim($l), '-'))
+                            ->join("\n");
+                    @endphp
+                    <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ trim($nonBulletLines) ?: $client->strategist_message }}</p>
+                @else
+                    <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
+                @endif
+            @endif
+        </div>
 
     @endif
 </div>
