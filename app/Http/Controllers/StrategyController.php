@@ -37,7 +37,8 @@ class StrategyController extends Controller
         }
 
         try {
-            $slides = $this->parseSlides($strategy->generated_document ?? '', $client->name);
+            // Use basic parser only (no AI call) to keep generation fast and avoid server timeouts
+            $slides = $this->basicParse($strategy->generated_document ?? '', $client->name);
 
             $prs = new PhpPresentation();
             $prs->getDocumentProperties()
@@ -51,7 +52,7 @@ class StrategyController extends Controller
                 $this->buildSlide($prs, $slideData, $i === 0, count($slides));
             }
 
-            $path = storage_path('app/tmp_' . uniqid() . '.pptx');
+            $path = sys_get_temp_dir() . '/coral_' . uniqid() . '.pptx';
             $writer = IOFactory::createWriter($prs, 'PowerPoint2007');
             $writer->save($path);
 
