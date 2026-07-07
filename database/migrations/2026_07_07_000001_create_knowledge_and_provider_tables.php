@@ -11,7 +11,9 @@ return new class extends Migration
     {
         // knowledge_chunks
         if (!Schema::hasTable('knowledge_chunks')) {
-            DB::statement('CREATE EXTENSION IF NOT EXISTS vector');
+            // Try pgvector — skip silently if not available
+            try { DB::statement('CREATE EXTENSION IF NOT EXISTS vector'); } catch (\Exception $e) {}
+
             Schema::create('knowledge_chunks', function (Blueprint $table) {
                 $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
                 $table->uuid('client_id');
@@ -21,7 +23,9 @@ return new class extends Migration
                 $table->text('chunk_text');
                 $table->timestamp('created_at')->useCurrent();
             });
-            DB::statement('ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS embedding vector(1536)');
+
+            // Add vector column only if extension is available
+            try { DB::statement('ALTER TABLE knowledge_chunks ADD COLUMN IF NOT EXISTS embedding vector(1536)'); } catch (\Exception $e) {}
         }
 
         // client_knowledge_meta
