@@ -88,7 +88,7 @@ class GoalsPage extends Component
         $prompt = "Based on the following approved digital marketing strategy, suggest new SMART goals not already covered by the client's existing goals.\n\n"
             . "STRATEGY:\n{$strategyText}\n\n"
             . "EXISTING GOALS (do not duplicate):\n{$existingText}\n\n"
-            . "Return a JSON array of at most 6 new goals. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
+            . "Return a JSON array of at most 6 new goals. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type (one of: number|percentage|currency|rank), target_value (a single number), due_date (YYYY-MM-DD), tasks:[]}. "
             . "Keep descriptions under 100 characters. Keep smart_details values under 80 characters each. "
             . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array, no other text.";
 
@@ -125,7 +125,7 @@ class GoalsPage extends Component
                 'title'        => $s['title'],
                 'description'  => $s['description'] ?? null,
                 'smart_details' => $s['smart_details'] ?? [],
-                'metric_type'  => $s['metric_type'] ?? 'number',
+                'metric_type'  => in_array($s['metric_type'] ?? '', ['number','percentage','currency','rank']) ? $s['metric_type'] : 'number',
                 'target_value' => isset($m[0]) ? (float) $m[0] : 0,
                 'due_date'     => !empty($s['due_date']) ? (function($d) { try { return \Carbon\Carbon::parse($d)->toDateString(); } catch (\Exception $e) { return null; } })($s['due_date']) : null,
                 'status'       => 'not_started',
