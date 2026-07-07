@@ -163,7 +163,7 @@
                                 <div>
                                     @if($goal->strategist_notes)
                                         <p class="text-xs font-medium text-[#FC54AA] mb-1">Strategist Notes</p>
-                                        <p class="text-sm text-gray-500 line-clamp-4 leading-relaxed">{{ $goal->strategist_notes }}</p>
+                                        <p class="text-sm text-gray-500 line-clamp-4 leading-relaxed whitespace-pre-line">{{ $goal->strategist_notes }}</p>
                                     @endif
                                 </div>
                             </div>

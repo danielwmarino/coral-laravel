@@ -35,7 +35,7 @@
 
         <div class="mt-2">
             @if($client->strategist_message)
-                <p class="text-sm text-gray-600 leading-relaxed">{{ $client->strategist_message }}</p>
+                <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ $client->strategist_message }}</p>
             @else
                 <p class="text-sm text-gray-300 italic">No message written yet. Click Edit to add one.</p>
             @endif

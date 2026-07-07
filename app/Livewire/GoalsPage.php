@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Jobs\GenerateGoals;
 use App\Models\Client;
 use App\Models\Goal;
 use App\Models\Strategy;
@@ -14,14 +13,13 @@ class GoalsPage extends Component
 {
     public ?Client $client = null;
     public bool $generating = false;
-    public bool $polling = false;
     public string $generateError = '';
 
-    // Review dialog
+    // Review dialog (generate flow)
     public bool $reviewOpen = false;
-    public array $reviewItems = [];   // lean: title, description, isExisting, goalId
+    public array $reviewItems = [];  // [{id, title, description, isExisting, suggestionIndex}]
     public array $reviewChecked = [];
-    public string $suggestionsJson = '[]'; // full suggestion data stored as JSON string
+    public string $suggestionsJson = '[]';
 
     // Add goal dialog
     public bool $addOpen = false;
@@ -31,7 +29,6 @@ class GoalsPage extends Component
     public string $addMetricType = 'number';
     public string $addTargetValue = '';
     public string $addDueDate = '';
-    public bool $addSaving = false;
 
     // Manage dialog
     public bool $manageOpen = false;
@@ -39,11 +36,6 @@ class GoalsPage extends Component
     public ?string $confirmAction = null;
 
     public function mount(): void
-    {
-        $this->loadClient();
-    }
-
-    public function loadClient(): void
     {
         $user = auth()->user();
         if ($user->isClientUser()) {
@@ -64,9 +56,7 @@ class GoalsPage extends Component
     {
         if (!$this->client) return null;
         return Strategy::where('client_id', $this->client->id)
-            ->where('status', 'approved')
-            ->latest()
-            ->first();
+            ->where('status', 'approved')->latest()->first();
     }
 
     public function generateGoals(): void
@@ -78,7 +68,7 @@ class GoalsPage extends Component
         $this->generateError = '';
         set_time_limit(120);
 
-        $existingGoals = Goal::where('client_id', $this->client->id)->get();
+        $existingGoals = Goal::where('client_id', $this->client->id)->where('archived', false)->get();
         $existingText = $existingGoals->isNotEmpty()
             ? $existingGoals->map(fn($g) => "- {$g->title}" . ($g->description ? ": {$g->description}" : ''))->join("\n")
             : '(none)';
@@ -99,13 +89,12 @@ class GoalsPage extends Component
                 model: 'claude-haiku-4-5-20251001',
             );
             $raw = $response->content[0]->text ?? '[]';
-            // Extract JSON array from anywhere in the response
             $start = strpos($raw, '[');
             $end = strrpos($raw, ']');
             $raw = ($start !== false && $end !== false) ? substr($raw, $start, $end - $start + 1) : '[]';
             $suggestions = json_decode($raw, true);
             if (!is_array($suggestions)) {
-                $this->generateError = 'Parse error: ' . json_last_error_msg() . ' | Raw[0-200]: ' . mb_substr($raw, 0, 200);
+                $this->generateError = 'Could not parse AI response. Please try again.';
                 $this->generating = false;
                 return;
             }
@@ -115,91 +104,87 @@ class GoalsPage extends Component
             return;
         }
 
-        $strategy = $this->approvedStrategy();
-        $added = 0;
-        foreach ($suggestions as $s) {
-            preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
-            $goal = Goal::create([
-                'client_id'    => $this->client->id,
-                'strategy_id'  => $strategy?->id,
-                'title'        => $s['title'],
-                'description'  => $s['description'] ?? null,
-                'smart_details' => $s['smart_details'] ?? [],
-                'metric_type'  => in_array($s['metric_type'] ?? '', ['number','percentage','currency','rank']) ? $s['metric_type'] : 'number',
-                'target_value' => isset($m[0]) ? (float) $m[0] : 0,
-                'due_date'     => !empty($s['due_date']) ? (function($d) { try { return \Carbon\Carbon::parse($d)->toDateString(); } catch (\Exception $e) { return null; } })($s['due_date']) : null,
-                'status'       => 'not_started',
-            ]);
-            foreach (($s['tasks'] ?? []) as $task) {
-                $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
-                if ($title) Task::create(['goal_id' => $goal->id, 'client_id' => $this->client->id, 'title' => $title]);
-            }
-            $added++;
-        }
-
-        $this->generating = false;
-        $this->polling = false;
-        session()->flash('toast', $added > 0 ? "{$added} goals added from strategy" : 'No new goals — existing goals already cover the strategy');
-    }
-
-    public function checkGenerated(): void
-    {
-        if (!$this->client) return;
-        $result = cache()->get("goals_generated_{$this->client->id}");
-        if ($result === null) return;
-
-        $this->polling = false;
-        if (is_string($result) && str_starts_with($result, 'ERROR:')) {
-            $this->generateError = $result;
+        // If no suggestions, nothing to review
+        if (empty($suggestions)) {
+            $this->generateError = 'Your existing goals already cover the strategy. No new goals to add.';
+            $this->generating = false;
             return;
         }
 
-        // Refresh and show review dialog
-        $existingGoals = Goal::where('client_id', $this->client->id)->get();
+        // Build review items: new suggestions only (existing goals stay as-is)
         $items = [];
-        foreach ($existingGoals->where('archived', false) as $g) {
-            $items[] = ['title' => $g->title, 'description' => $g->description, 'goalId' => $g->id, 'isExisting' => true];
+        foreach ($suggestions as $i => $s) {
+            $items[] = [
+                'id'              => null,
+                'title'           => $s['title'] ?? '',
+                'description'     => $s['description'] ?? '',
+                'isExisting'      => false,
+                'suggestionIndex' => $i,
+            ];
         }
-        // New goals were already saved by the job — show them as existing
+
+        // All checked by default
         $this->reviewItems = $items;
-        $this->reviewChecked = collect($items)->map(fn() => true)->toArray();
+        $this->reviewChecked = array_fill(0, count($items), true);
+        $this->suggestionsJson = json_encode($suggestions);
+        $this->generating = false;
         $this->reviewOpen = true;
-        cache()->forget("goals_generated_{$this->client->id}");
+    }
+
+    public function deleteReviewItem(int $index): void
+    {
+        $item = $this->reviewItems[$index] ?? null;
+        if (!$item) return;
+
+        if ($item['isExisting'] && $item['id']) {
+            Goal::where('id', $item['id'])->where('client_id', $this->client?->id)->delete();
+        }
+
+        // Remove from arrays
+        array_splice($this->reviewItems, $index, 1);
+        array_splice($this->reviewChecked, $index, 1);
     }
 
     public function applyReview(): void
     {
-        if (!$this->client || !$this->approvedStrategy()) return;
-
+        if (!$this->client) return;
+        $strategy = $this->approvedStrategy();
         $suggestions = json_decode($this->suggestionsJson, true) ?? [];
 
         foreach ($this->reviewItems as $i => $item) {
-            $checked = $this->reviewChecked[$i] ?? false;
+            $checked = (bool) ($this->reviewChecked[$i] ?? false);
 
-            if ($item['isExisting'] && !$checked) {
-                Goal::find($item['goalId'])?->update(['archived' => true]);
-            } elseif (!$item['isExisting'] && $checked) {
-                $s = $suggestions[$item['suggestionIndex']] ?? [];
-                preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
-                $targetValue = isset($m[0]) ? (float) $m[0] : 0;
-                $dueDate = null;
-                if (!empty($s['due_date'])) {
-                    try { $dueDate = \Carbon\Carbon::parse($s['due_date'])->toDateString(); } catch (\Exception $e) {}
+            if ($item['isExisting']) {
+                // Uncheck = archive existing goal
+                if (!$checked && $item['id']) {
+                    Goal::where('id', $item['id'])->where('client_id', $this->client->id)->update(['archived' => true]);
                 }
-                $goal = Goal::create([
-                    'client_id'    => $this->client->id,
-                    'strategy_id'  => $this->approvedStrategy()->id,
-                    'title'        => $s['title'],
-                    'description'  => $s['description'] ?? null,
-                    'smart_details' => $s['smart_details'] ?? [],
-                    'metric_type'  => $s['metric_type'] ?? 'number',
-                    'target_value' => $targetValue,
-                    'due_date'     => $dueDate,
-                    'status'       => 'not_started',
-                ]);
-                foreach (($s['tasks'] ?? []) as $task) {
-                    $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
-                    if ($title) Task::create(['goal_id' => $goal->id, 'client_id' => $this->client->id, 'title' => $title]);
+            } else {
+                // Check = save new suggestion
+                if ($checked) {
+                    $s = $suggestions[$item['suggestionIndex']] ?? [];
+                    if (empty($s)) continue;
+
+                    preg_match('/[\d.]+/', (string) ($s['target_value'] ?? 0), $m);
+                    $dueDate = null;
+                    if (!empty($s['due_date'])) {
+                        try { $dueDate = \Carbon\Carbon::parse($s['due_date'])->toDateString(); } catch (\Exception $e) {}
+                    }
+                    $goal = Goal::create([
+                        'client_id'     => $this->client->id,
+                        'strategy_id'   => $strategy?->id,
+                        'title'         => $s['title'],
+                        'description'   => $s['description'] ?? null,
+                        'smart_details' => $s['smart_details'] ?? [],
+                        'metric_type'   => in_array($s['metric_type'] ?? '', ['number','percentage','currency','rank']) ? $s['metric_type'] : 'number',
+                        'target_value'  => isset($m[0]) ? (float) $m[0] : 0,
+                        'due_date'      => $dueDate,
+                        'status'        => 'not_started',
+                    ]);
+                    foreach (($s['tasks'] ?? []) as $task) {
+                        $title = is_array($task) ? ($task['title'] ?? '') : (string) $task;
+                        if ($title) Task::create(['goal_id' => $goal->id, 'client_id' => $this->client->id, 'title' => $title]);
+                    }
                 }
             }
         }
@@ -213,32 +198,36 @@ class GoalsPage extends Component
 
     public function saveNewGoal(): void
     {
-        $this->validate([
-            'addTitle' => 'required|string|max:255',
-        ]);
+        $this->validate(['addTitle' => 'required|string|max:255']);
         if (!$this->client) return;
-        $this->addSaving = true;
+
         Goal::create([
-            'client_id'   => $this->client->id,
-            'title'       => $this->addTitle,
-            'description' => $this->addDescription ?: null,
-            'status'      => $this->addStatus,
-            'metric_type' => $this->addMetricType,
+            'client_id'    => $this->client->id,
+            'title'        => $this->addTitle,
+            'description'  => $this->addDescription ?: null,
+            'status'       => $this->addStatus,
+            'metric_type'  => $this->addMetricType,
             'target_value' => $this->addTargetValue ?: 0,
-            'due_date'    => $this->addDueDate ?: null,
+            'due_date'     => $this->addDueDate ?: null,
+            'smart_details' => [],
         ]);
         $this->addOpen = false;
         $this->addTitle = $this->addDescription = $this->addTargetValue = $this->addDueDate = '';
-        $this->addSaving = false;
         session()->flash('toast', 'Goal added');
     }
 
-    // Manage dialog
     public function openManage(): void
     {
         $this->manageSelected = [];
         $this->confirmAction = null;
         $this->manageOpen = true;
+    }
+
+    public function deleteGoalDirect(string $id): void
+    {
+        Goal::where('id', $id)->where('client_id', $this->client?->id)->delete();
+        unset($this->manageSelected[$id]);
+        session()->flash('toast', 'Goal deleted');
     }
 
     public function executeBulk(): void
@@ -247,11 +236,11 @@ class GoalsPage extends Component
         if (empty($ids)) return;
 
         if ($this->confirmAction === 'archive') {
-            Goal::whereIn('id', $ids)->update(['archived' => true]);
+            Goal::whereIn('id', $ids)->where('client_id', $this->client?->id)->update(['archived' => true]);
         } elseif ($this->confirmAction === 'restore') {
-            Goal::whereIn('id', $ids)->update(['archived' => false]);
+            Goal::whereIn('id', $ids)->where('client_id', $this->client?->id)->update(['archived' => false]);
         } elseif ($this->confirmAction === 'delete') {
-            Goal::whereIn('id', $ids)->delete();
+            Goal::whereIn('id', $ids)->where('client_id', $this->client?->id)->delete();
         }
 
         $this->confirmAction = null;

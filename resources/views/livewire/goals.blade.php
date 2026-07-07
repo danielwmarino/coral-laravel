@@ -47,7 +47,7 @@
     </div>
 
     {{-- Generating progress overlay --}}
-    <div wire:loading wire:target="generateGoals" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div wire:loading.flex wire:target="generateGoals" class="fixed inset-0 z-50 bg-black/40 items-center justify-center">
         <div class="bg-white rounded-2xl shadow-xl px-10 py-8 flex flex-col items-center gap-5 w-72">
             <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
                 <circle cx="32" cy="32" r="26" fill="none" stroke="#F3F4F6" stroke-width="6"/>
@@ -104,32 +104,33 @@
         <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" style="position:fixed;top:0;left:0;right:0;bottom:0;">
             <div class="bg-white rounded-xl shadow-xl w-[640px] max-w-[calc(100%-2rem)] max-h-[840px] flex flex-col">
                 <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="text-base font-semibold">Review Goals</h3>
-                    <p class="text-sm text-gray-500 mt-0.5">Select which goals to keep active. Unchecked existing goals will be archived.</p>
+                    <h3 class="text-base font-semibold">Add New Goals</h3>
+                    <p class="text-sm text-gray-500 mt-0.5">Select the goals you'd like to add. Unchecked goals will be skipped.</p>
                 </div>
                 <div class="flex-1 overflow-y-auto px-6 py-4 space-y-2">
                     @foreach($reviewItems as $i => $item)
-                        <label class="flex items-start gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-                            <input type="checkbox" wire:model="reviewChecked.{{ $i }}" class="mt-0.5 rounded border-gray-300 text-[#FC54AA] focus:ring-[#FC54AA]">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm font-medium text-gray-900">{{ $item['title'] }}</span>
-                                    @if($item['isExisting'])
-                                        <span class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">Current</span>
-                                    @else
-                                        <span class="text-xs px-1.5 py-0.5 bg-[#FCE4F1] text-[#FC54AA] rounded">New</span>
+                        <div class="flex items-start gap-3 p-3 rounded-lg border {{ ($reviewChecked[$i] ?? false) ? 'border-[#FC54AA]/30 bg-[#FCE4F1]/20' : 'border-gray-100 bg-white' }} transition-colors">
+                            <label class="flex items-start gap-3 flex-1 cursor-pointer min-w-0">
+                                <input type="checkbox" wire:model="reviewChecked.{{ $i }}" class="mt-0.5 rounded border-gray-300 text-[#FC54AA] focus:ring-[#FC54AA]">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-sm font-medium text-gray-900 block">{{ $item['title'] }}</span>
+                                    @if($item['description'])
+                                        <p class="text-xs text-gray-500 mt-0.5">{{ $item['description'] }}</p>
                                     @endif
                                 </div>
-                                @if($item['description'])
-                                    <p class="text-xs text-gray-500 mt-0.5">{{ $item['description'] }}</p>
-                                @endif
-                            </div>
-                        </label>
+                            </label>
+                            <button wire:click="deleteReviewItem({{ $i }})" title="Remove" class="shrink-0 p-1 text-gray-300 hover:text-red-500 transition-colors mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
                     @endforeach
                 </div>
-                <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-                    <button wire:click="$set('reviewOpen', false)" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Cancel</button>
-                    <button wire:click="applyReview" class="px-4 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors">Apply</button>
+                <div class="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                    <p class="text-xs text-gray-400">{{ count(array_filter($reviewChecked)) }} of {{ count($reviewItems) }} selected</p>
+                    <div class="flex gap-2">
+                        <button wire:click="$set('reviewOpen', false)" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Cancel</button>
+                        <button wire:click="applyReview" class="px-4 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors">Add Selected Goals</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -201,18 +202,46 @@
                     <h3 class="text-base font-semibold">Manage Goals</h3>
                     <p class="text-sm text-gray-500 mt-0.5">Select goals then choose an action.</p>
                 </div>
-                <div class="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-                    @foreach($allGoals as $goal)
-                        <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
-                            <input type="checkbox" wire:model="manageSelected.{{ $goal->id }}" class="rounded border-gray-300 text-[#FC54AA] focus:ring-[#FC54AA]">
-                            <div class="flex-1 min-w-0 flex items-center gap-2">
-                                <span class="text-sm font-medium text-gray-900 truncate">{{ $goal->title }}</span>
-                                @if($goal->archived)
-                                    <span class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded shrink-0">Archived</span>
-                                @endif
+                <div class="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+                    @php
+                        $activeGoals = $allGoals->where('archived', false);
+                        $archivedGoals = $allGoals->where('archived', true);
+                    @endphp
+                    @if($activeGoals->isNotEmpty())
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Active</p>
+                        @foreach($activeGoals as $goal)
+                            <div class="flex items-center gap-3 p-3 rounded-lg border {{ !empty($manageSelected[$goal->id]) ? 'border-[#FC54AA]/30 bg-[#FCE4F1]/20' : 'border-gray-100' }} transition-colors">
+                                <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+                                    <input type="checkbox" wire:model="manageSelected.{{ $goal->id }}" class="rounded border-gray-300 text-[#FC54AA] focus:ring-[#FC54AA]">
+                                    <span class="text-sm font-medium text-gray-900 truncate">{{ $goal->title }}</span>
+                                </label>
+                                <button wire:click="deleteGoalDirect('{{ $goal->id }}')"
+                                    wire:confirm="Delete '{{ addslashes($goal->title) }}'? This cannot be undone."
+                                    title="Delete" class="shrink-0 p-1 text-gray-300 hover:text-red-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                </button>
                             </div>
-                        </label>
-                    @endforeach
+                        @endforeach
+                    @endif
+                    @if($archivedGoals->isNotEmpty())
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-4 mb-2">Archived</p>
+                        @foreach($archivedGoals as $goal)
+                            <div class="flex items-center gap-3 p-3 rounded-lg border {{ !empty($manageSelected[$goal->id]) ? 'border-[#FC54AA]/30 bg-[#FCE4F1]/20' : 'border-gray-100 opacity-60' }} transition-colors">
+                                <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
+                                    <input type="checkbox" wire:model="manageSelected.{{ $goal->id }}" class="rounded border-gray-300 text-[#FC54AA] focus:ring-[#FC54AA]">
+                                    <span class="text-sm font-medium text-gray-600 truncate">{{ $goal->title }}</span>
+                                </label>
+                                <button wire:click="deleteGoalDirect('{{ $goal->id }}')"
+                                    wire:confirm="Delete '{{ addslashes($goal->title) }}'? This cannot be undone."
+                                    title="Delete" class="shrink-0 p-1 text-gray-300 hover:text-red-500 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                </button>
+                            </div>
+                        @endforeach
+                    @endif
+                    @if($allGoals->isEmpty())
+                        <p class="text-sm text-gray-400 text-center py-8">No goals to manage.</p>
+                    @endif
                 </div>
                 @if($confirmAction)
                     <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">

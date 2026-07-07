@@ -14,6 +14,7 @@ class AgentPage extends Component
     public array $messages = [];
     public bool $thinking = false;
     public ?string $conversationId = null;
+    public bool $historyOpen = false;
 
     public function mount(): void
     {
@@ -25,7 +26,7 @@ class AgentPage extends Component
             $this->client = $clientId ? Client::find($clientId) : null;
         }
 
-        // Load or create conversation
+        // Load most recent conversation
         if ($this->client) {
             $conv = AgentConversation::where('client_id', $this->client->id)
                 ->where('user_id', auth()->id())
@@ -36,6 +37,38 @@ class AgentPage extends Component
                 $this->messages = $conv->messages ?? [];
             }
         }
+    }
+
+    public function newChat(): void
+    {
+        $this->messages = [];
+        $this->conversationId = null;
+        $this->input = '';
+        $this->historyOpen = false;
+    }
+
+    public function loadConversation(string $id): void
+    {
+        $conv = AgentConversation::where('id', $id)
+            ->where('client_id', $this->client?->id)
+            ->where('user_id', auth()->id())
+            ->first();
+        if ($conv) {
+            $this->conversationId = $conv->id;
+            $this->messages = $conv->messages ?? [];
+            $this->input = '';
+        }
+        $this->historyOpen = false;
+    }
+
+    public function conversations()
+    {
+        if (!$this->client) return collect();
+        return AgentConversation::where('client_id', $this->client->id)
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->limit(20)
+            ->get(['id', 'title', 'created_at']);
     }
 
     public function send(): void
@@ -109,14 +142,10 @@ class AgentPage extends Component
         }
     }
 
-    public function clearChat(): void
-    {
-        $this->messages = [];
-        $this->conversationId = null;
-    }
-
     public function render(): \Illuminate\View\View
     {
-        return view('livewire.agent');
+        return view('livewire.agent', [
+            'conversations' => $this->conversations(),
+        ]);
     }
 }
