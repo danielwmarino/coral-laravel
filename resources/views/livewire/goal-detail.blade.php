@@ -70,6 +70,211 @@
             </div>
         </div>
 
+        {{-- ── Progress Overview Chart ── --}}
+        @php
+            $now       = now();
+            $start     = $goal->created_at ?? $now->copy()->subDays(30);
+            $end       = $goal->due_date   ?? $now->copy()->addDays(90);
+            $current   = (float) ($goal->current_value ?? 0);
+            $target    = (float) ($goal->target_value  ?? 0);
+
+            // Build ~10 evenly-spaced x-axis dates from start → end
+            $totalDays   = max(1, $start->diffInDays($end));
+            $steps       = min(12, max(6, (int) ceil($totalDays / 7)));
+            $stepDays    = $totalDays / $steps;
+            $labels      = [];
+            $actualData  = [];   // known progress up to today, null after
+            $projData    = [];   // null up to today, projected after
+
+            for ($i = 0; $i <= $steps; $i++) {
+                $d = $start->copy()->addDays(round($i * $stepDays));
+                $labels[] = $d->format('M j');
+
+                $fraction = $totalDays > 0 ? min(1, $d->diffInDays($start) / $totalDays) : 0;
+
+                if ($d->lte($now)) {
+                    // Actual: flat at 0 until today where we put current_value
+                    $actualData[] = $d->isSameDay($now) || $i === $steps ? $current : ($i === 0 ? $current : $current);
+                    $projData[]   = null;
+                } else {
+                    // Projected: linear ramp from current → target
+                    $remainFraction = $totalDays > 0 ? ($d->diffInDays($now)) / max(1, $end->diffInDays($now)) : 1;
+                    $projData[]   = round($current + ($target - $current) * min(1, $remainFraction), 2);
+                    $actualData[] = null;
+                }
+            }
+
+            // Connect the two lines at today's point
+            $todayIdx = collect($labels)->search(fn($l) => $now->format('M j') === $l);
+            if ($todayIdx !== false) {
+                $projData[$todayIdx] = $current;
+            } else {
+                // inject today between last past and first future
+                $insertAt = count(array_filter($actualData, fn($v) => $v !== null));
+                array_splice($labels,     $insertAt, 0, [$now->format('M j')]);
+                array_splice($actualData, $insertAt, 0, [$current]);
+                array_splice($projData,   $insertAt, 0, [$current]);
+            }
+        @endphp
+
+        <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <h2 class="text-sm font-semibold text-gray-900 mb-5">Progress Overview</h2>
+            <div class="relative" style="height:220px">
+                <canvas id="goalProgressChart-{{ $goal->id }}"></canvas>
+            </div>
+            <div class="flex items-center justify-center gap-6 mt-4 text-xs text-gray-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-6 h-0.5 bg-[#7C3AED] rounded"></span> Actual progress
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-6 border-t-2 border-dashed border-[#7C3AED]/60"></span> Projected
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-6 h-0.5 bg-emerald-400 rounded"></span> Target
+                </span>
+            </div>
+            <script>
+            (function() {
+                function init() {
+                    var canvas = document.getElementById('goalProgressChart-{{ $goal->id }}');
+                    if (!canvas || !window.Chart) { setTimeout(init, 100); return; }
+                    if (canvas._chartInstance) canvas._chartInstance.destroy();
+
+                    var labels     = @json($labels);
+                    var actual     = @json($actualData);
+                    var projected  = @json($projData);
+                    var target     = {{ $target }};
+                    var targetLine = labels.map(function() { return target; });
+
+                    canvas._chartInstance = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Actual progress',
+                                    data: actual,
+                                    borderColor: '#7C3AED',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    pointRadius: function(ctx) { return ctx.dataIndex === actual.filter(function(v){return v!==null}).length - 1 ? 4 : 0; },
+                                    pointBackgroundColor: '#7C3AED',
+                                    spanGaps: false,
+                                    tension: 0,
+                                },
+                                {
+                                    label: 'Projected',
+                                    data: projected,
+                                    borderColor: '#7C3AED',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 2,
+                                    borderDash: [5, 4],
+                                    pointRadius: 0,
+                                    spanGaps: false,
+                                    tension: 0,
+                                },
+                                {
+                                    label: 'Target',
+                                    data: targetLine,
+                                    borderColor: '#34D399',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 1.5,
+                                    pointRadius: 0,
+                                    tension: 0,
+                                },
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(ctx) {
+                                            if (ctx.parsed.y === null) return null;
+                                            return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { color: '#f3f4f6', drawBorder: false },
+                                    ticks: { color: '#9ca3af', font: { size: 11 } },
+                                },
+                                y: {
+                                    grid: { color: '#f3f4f6', drawBorder: false },
+                                    ticks: { color: '#9ca3af', font: { size: 11 } },
+                                    min: 0,
+                                }
+                            }
+                        }
+                    });
+                }
+                init();
+            })();
+            </script>
+        </div>
+
+        {{-- ── Linked Analytics ── --}}
+        @php $analyticsLinks = $goal->analyticsLinks()->with('analyticsConnection')->get(); @endphp
+        <div class="bg-white border border-gray-100 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-sm font-semibold text-gray-900">Linked Analytics</h2>
+                <a href="{{ route('dataset.index') }}"
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Connect Analytics
+                </a>
+            </div>
+
+            @if($analyticsLinks->isEmpty())
+                <div class="flex flex-col items-center justify-center py-10 text-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-200"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <p class="text-sm text-gray-400">No analytics connected to this goal yet</p>
+                    <p class="text-xs text-gray-300">Link a data source to track real progress</p>
+                </div>
+            @else
+                <div class="space-y-3">
+                    @foreach($analyticsLinks as $link)
+                        @php
+                            $platform  = $link->analyticsConnection->platform ?? 'Unknown';
+                            $linkPct   = $link->target_value > 0 ? min(100, round(($link->current_value / $link->target_value) * 100, 1)) : 0;
+                            $platformIcons = [
+                                'google_analytics' => '#EA4335',
+                                'google_ads'       => '#FBBC04',
+                                'meta_ads'         => '#1877F2',
+                                'hubspot'          => '#FF7A59',
+                            ];
+                            $color = $platformIcons[$platform] ?? '#9CA3AF';
+                        @endphp
+                        <div class="p-4 rounded-lg border border-gray-100 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ $color }}"></span>
+                                    <span class="text-xs font-medium text-gray-700">{{ ucwords(str_replace('_', ' ', $platform)) }}</span>
+                                    <span class="text-xs text-gray-400">·</span>
+                                    <span class="text-xs text-gray-500">{{ $link->metric_key }}</span>
+                                </div>
+                                @if($link->last_updated)
+                                    <span class="text-xs text-gray-300">Synced {{ \Carbon\Carbon::parse($link->last_updated)->diffForHumans() }}</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span>{{ number_format($link->current_value) }} / {{ $link->target_value ? number_format($link->target_value) : '—' }}</span>
+                                <span class="font-medium text-gray-700">{{ $linkPct }}%</span>
+                            </div>
+                            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all" style="width:{{ $linkPct }}%;background:{{ $color }}"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {{-- SMART Details --}}
             @if($goal->smart_details)
