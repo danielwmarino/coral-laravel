@@ -119,9 +119,43 @@
                 @endif
             </div>
         @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="space-y-3">
                 @foreach($goals as $goal)
-                    <x-goal-card :goal="$goal" :isAgency="$isAgency" />
+                    @php
+                        $statusColors = ['not_started'=>'bg-gray-100 text-gray-600','in_progress'=>'bg-blue-50 text-blue-700','completed'=>'bg-green-50 text-green-700','at_risk'=>'bg-red-50 text-red-600'];
+                        $color = $statusColors[$goal->status] ?? 'bg-gray-100 text-gray-600';
+                        $progress = $goal->progressPercent();
+                    @endphp
+                    <a href="{{ route('goals.show', $goal->id) }}" class="block group">
+                        <div class="bg-white border border-gray-100 rounded-xl hover:border-[#f7a0bc] hover:shadow-sm transition-all">
+                            <div class="px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-12">
+                                <div>
+                                    <div class="flex items-start justify-between gap-3 mb-3">
+                                        <p class="text-xl font-semibold text-[#003470] leading-snug">{{ $goal->title }}</p>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs {{ $color }} shrink-0 capitalize whitespace-nowrap">{{ str_replace('_', ' ', ucfirst($goal->status)) }}</span>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <span>{{ number_format($goal->current_value) }} / {{ $goal->target_value ? number_format($goal->target_value) : '—' }}</span>
+                                            <span>{{ $progress }}%</span>
+                                        </div>
+                                        <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-[#FC54AA] rounded-full" style="width: {{ $progress }}%"></div>
+                                        </div>
+                                    </div>
+                                    @if($goal->due_date)
+                                        <p class="text-xs text-gray-400 mt-3">Due {{ $goal->due_date->format('n/j/Y') }}</p>
+                                    @endif
+                                </div>
+                                <div>
+                                    @if($goal->strategist_notes)
+                                        <p class="text-xs font-medium text-[#FC54AA] mb-1">Strategist Notes</p>
+                                        <p class="text-sm text-gray-500 line-clamp-4 leading-relaxed">{{ $goal->strategist_notes }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </a>
                 @endforeach
             </div>
         @endif

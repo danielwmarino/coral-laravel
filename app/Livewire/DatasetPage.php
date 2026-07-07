@@ -80,12 +80,15 @@ class DatasetPage extends Component
             ? $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n")
             : '(no goals set)';
 
-        $prompt = "Create a concise client knowledge brief for {$this->client->name}.\n\n"
+        $prompt = "You are a senior marketing strategist writing a performance executive summary for {$this->client->name}.\n\n"
             . "APPROVED STRATEGY:\n{$strategyText}\n\n"
-            . "ACTIVE GOALS:\n{$goalsText}\n\n"
-            . "Write a 3-4 paragraph executive brief covering: who this client is, their key marketing objectives, "
-            . "their target audience, and their top priorities. This will be injected into every AI assistant conversation "
-            . "to give instant context. Be specific and factual. No bullet points — flowing prose only.";
+            . "CURRENT GOALS & PROGRESS:\n{$goalsText}\n\n"
+            . "Write 2–3 short paragraphs (no bullet points, flowing prose) that:\n"
+            . "1. Honestly assess current performance — what's working, what's not, what the numbers show\n"
+            . "2. Call out wins, risks, or gaps that need attention right now\n"
+            . "3. Give a clear sense of momentum — are things on track, ahead, or behind?\n\n"
+            . "Be direct and specific. Reference actual goal names and numbers. Avoid generic marketing language. "
+            . "Write as if briefing a CEO before a board meeting. Return only the summary text, no headers.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
