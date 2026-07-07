@@ -57,7 +57,7 @@ class ClientSwitcher extends Component
         Session::put('active_client_id', $client->id);
 
         // Reload the current page to refresh all data for the new client
-        $this->redirect(request()->url(), navigate: true);
+        $this->redirect(request()->url());
     }
 
     public function render(): \Illuminate\View\View

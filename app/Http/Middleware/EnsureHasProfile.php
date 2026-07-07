@@ -16,7 +16,11 @@ class EnsureHasProfile
     {
         $user = $request->user();
 
-        if ($user && !$user->profile && !$request->routeIs('pending') && !$request->routeIs('logout')) {
+        if ($user && !$user->profile
+            && !$request->routeIs('pending')
+            && !$request->routeIs('logout')
+            && !$request->is('livewire*')
+        ) {
             return redirect()->route('pending');
         }
 
