@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full" x-data="{}" x-init="$watch('$wire.messages', () => { $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }) })">
+<div class="flex flex-col h-full overflow-hidden" x-data="{}" x-init="$watch('$wire.messages', () => { $nextTick(() => { let el = $refs.chatScroll; if (el) el.scrollTop = el.scrollHeight }) })">
 
     {{-- Header --}}
     <div class="shrink-0 h-12 border-b border-gray-100 flex items-center justify-between px-6">

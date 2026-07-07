@@ -1,4 +1,4 @@
-<div class="flex h-[calc(100vh-0px)] overflow-hidden -mx-6 -my-8">
+<div class="flex h-full overflow-hidden">
 
     {{-- Flash toast --}}
     @if(session('toast'))
