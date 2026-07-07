@@ -85,11 +85,11 @@ class GoalsPage extends Component
             . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array.";
 
         try {
-            $response = app(\Anthropic\Client::class)->messages->create([
-                'model' => 'claude-sonnet-4-6',
-                'max_tokens' => 3000,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-            ]);
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 3000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-sonnet-4-6',
+            );
 
             $raw = $response->content[0]->text ?? '[]';
             $raw = preg_replace('/^```(?:json)?\s*/i', '', trim($raw));

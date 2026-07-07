@@ -62,12 +62,12 @@ class AgentPage extends Component
         }
 
         try {
-            $response = app(\Anthropic\Client::class)->messages->create([
-                'model'      => 'claude-sonnet-4-6',
-                'max_tokens' => 1500,
-                'system'     => $system,
-                'messages'   => collect($this->messages)->map(fn($m) => ['role' => $m['role'], 'content' => $m['content']])->toArray(),
-            ]);
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 1500,
+                messages: collect($this->messages)->map(fn($m) => ['role' => $m['role'], 'content' => $m['content']])->toArray(),
+                model: 'claude-sonnet-4-6',
+                system: $system,
+            );
             $reply = $response->content[0]->text ?? 'Sorry, I could not respond.';
         } catch (\Exception $e) {
             $reply = 'Error: ' . $e->getMessage();

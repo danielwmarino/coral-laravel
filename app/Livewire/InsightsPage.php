@@ -35,11 +35,11 @@ class InsightsPage extends Component
             . "Return a JSON array of 6 insights, each: {title, body, category (SEO|Paid|Content|Social|Email|Analytics|Industry), priority (high|medium|low)}. Return ONLY the JSON array.";
 
         try {
-            $response = app(\Anthropic\Client::class)->messages->create([
-                'model' => 'claude-sonnet-4-6',
-                'max_tokens' => 2000,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-            ]);
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 2000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-sonnet-4-6',
+            );
             $raw = $response->content[0]->text ?? '[]';
             $raw = preg_replace('/^```(?:json)?\s*/i', '', trim($raw));
             $raw = preg_replace('/\s*```$/i', '', $raw);

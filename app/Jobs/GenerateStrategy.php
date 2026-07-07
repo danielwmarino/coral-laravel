@@ -22,11 +22,11 @@ class GenerateStrategy implements ShouldQueue
 
     public function handle(): void
     {
-        $response = app(\Anthropic\Client::class)->messages->create([
-            'model'      => 'claude-sonnet-4-6',
-            'max_tokens' => 4000,
-            'messages'   => [['role' => 'user', 'content' => $this->prompt]],
-        ]);
+        $response = app(\Anthropic\Client::class)->messages->create(
+            maxTokens: 4000,
+            messages: [['role' => 'user', 'content' => $this->prompt]],
+            model: 'claude-sonnet-4-6',
+        );
 
         $doc = $response->content[0]->text ?? '';
 
