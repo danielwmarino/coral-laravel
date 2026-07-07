@@ -75,10 +75,50 @@ class GoalsPage extends Component
 
         $this->generating = true;
         $this->generateError = '';
-        cache()->forget("goals_generated_{$this->client->id}");
-        GenerateGoals::dispatch($this->client->id, $strategy->id);
+        set_time_limit(120);
+
+        $existingGoals = Goal::where('client_id', $this->client->id)->get();
+        $existingText = $existingGoals->isNotEmpty()
+            ? $existingGoals->map(fn($g) => "- {$g->title}" . ($g->description ? ": {$g->description}" : ''))->join("\n")
+            : '(none)';
+
+        $strategyText = mb_substr($strategy->generated_document ?? json_encode($strategy->content), 0, 4000);
+
+        $prompt = "Based on the following approved digital marketing strategy, suggest new SMART goals not already covered by the client's existing goals.\n\n"
+            . "STRATEGY:\n{$strategyText}\n\n"
+            . "EXISTING GOALS (do not duplicate):\n{$existingText}\n\n"
+            . "Return a JSON array of new goals only. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
+            . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array.";
+
+        try {
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 2000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-haiku-4-5-20251001',
+            );
+            $raw = $response->content[0]->text ?? '[]';
+            $raw = preg_replace('/^```(?:json)?\s*/i', '', trim($raw));
+            $raw = preg_replace('/\s*```$/i', '', $raw);
+            $suggestions = json_decode($raw, true) ?? [];
+        } catch (\Exception $e) {
+            $this->generateError = 'Failed to generate goals: ' . $e->getMessage();
+            $this->generating = false;
+            return;
+        }
+
+        $items = [];
+        foreach ($existingGoals->where('archived', false) as $g) {
+            $items[] = ['title' => $g->title, 'description' => $g->description, 'goalId' => $g->id, 'isExisting' => true];
+        }
+        foreach ($suggestions as $s) {
+            $items[] = ['title' => $s['title'], 'description' => $s['description'] ?? '', 'suggestion' => $s, 'isExisting' => false];
+        }
+
+        $this->reviewItems = $items;
+        $this->reviewChecked = collect($items)->map(fn($item) => $item['isExisting'])->toArray();
+        $this->reviewOpen = true;
         $this->generating = false;
-        $this->polling = true;
+        $this->polling = false;
     }
 
     public function checkGenerated(): void
