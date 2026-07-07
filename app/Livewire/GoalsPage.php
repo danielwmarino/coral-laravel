@@ -87,12 +87,13 @@ class GoalsPage extends Component
         $prompt = "Based on the following approved digital marketing strategy, suggest new SMART goals not already covered by the client's existing goals.\n\n"
             . "STRATEGY:\n{$strategyText}\n\n"
             . "EXISTING GOALS (do not duplicate):\n{$existingText}\n\n"
-            . "Return a JSON array of new goals only. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
-            . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array.";
+            . "Return a JSON array of at most 5 new goals. Each object: {title, description, smart_details:{specific,measurable,achievable,relevant,time_bound}, metric_type, target_value, due_date, tasks:[]}. "
+            . "Keep descriptions under 100 characters. Keep smart_details values under 80 characters each. "
+            . "Return [] if existing goals already cover the strategy. Return ONLY the JSON array, no other text.";
 
         try {
             $response = app(\Anthropic\Client::class)->messages->create(
-                maxTokens: 2000,
+                maxTokens: 3000,
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-haiku-4-5-20251001',
             );
