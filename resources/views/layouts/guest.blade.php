@@ -17,8 +17,9 @@
     <body class="font-sans text-gray-900 antialiased" style="background-color: #12336c;">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
             {{-- Coral logo --}}
-            <div class="mb-6">
+            <div class="mb-6 flex flex-col items-center gap-2">
                 <img src="{{ asset('Coral-Logo.png') }}" alt="Coral" class="h-10 w-auto">
+                <p class="text-sm text-white/60 tracking-wide">Marketing Intelligence Platform</p>
             </div>
 
             <div class="w-full sm:max-w-md px-8 py-8 bg-white shadow-xl overflow-hidden sm:rounded-2xl">
