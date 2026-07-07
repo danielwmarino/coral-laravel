@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.3",
         "anthropic-ai/sdk": "^0.36.0",
+        "aws/aws-sdk-php": "^3.387",
         "laravel/breeze": "^2.4",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
