@@ -54,11 +54,28 @@ class AgentPage extends Component
         $system = "You are a digital marketing strategist assistant for {$this->client->name}. "
             . "Be concise, actionable, and specific. Use markdown for formatting.\n\n";
 
+        // Inject executive summary if available
+        if ($this->client->executive_summary) {
+            $system .= "CLIENT BRIEF:\n" . $this->client->executive_summary . "\n\n";
+        }
+
         if ($strategy) {
-            $system .= "APPROVED STRATEGY:\n" . ($strategy->generated_document ?? '') . "\n\n";
+            $system .= "APPROVED STRATEGY:\n" . mb_substr($strategy->generated_document ?? '', 0, 3000) . "\n\n";
         }
         if ($goals->isNotEmpty()) {
-            $system .= "ACTIVE GOALS:\n" . $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n");
+            $system .= "ACTIVE GOALS:\n" . $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n") . "\n\n";
+        }
+
+        // Inject up to 10 knowledge chunks (documents + website)
+        $chunks = \App\Models\KnowledgeChunk::where('client_id', $this->client->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        if ($chunks->isNotEmpty()) {
+            $system .= "KNOWLEDGE BASE:\n";
+            foreach ($chunks as $chunk) {
+                $system .= "[{$chunk->source_label}]: " . mb_substr($chunk->chunk_text, 0, 500) . "\n---\n";
+            }
         }
 
         try {
