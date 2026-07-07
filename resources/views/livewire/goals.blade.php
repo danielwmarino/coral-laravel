@@ -47,9 +47,18 @@
     </div>
 
     {{-- Generating progress overlay --}}
-    <div wire:loading.flex wire:target="generateGoals" class="fixed inset-0 z-50 bg-black/40 items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-xl px-10 py-8 flex flex-col items-center gap-5 w-72">
-            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+    @teleport('body')
+    <style>
+        @keyframes goalProgress {
+            0%   { stroke-dashoffset: 163.4; }
+            80%  { stroke-dashoffset: 30; }
+            100% { stroke-dashoffset: 10; }
+        }
+    </style>
+    <div wire:loading.flex wire:target="generateGoals"
+         style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:1rem;box-shadow:0 20px 60px rgba(0,0,0,0.15);padding:2.5rem;display:flex;flex-direction:column;align-items:center;gap:1.25rem;width:18rem;">
+            <svg style="width:4rem;height:4rem;transform:rotate(-90deg);" viewBox="0 0 64 64">
                 <circle cx="32" cy="32" r="26" fill="none" stroke="#F3F4F6" stroke-width="6"/>
                 <circle cx="32" cy="32" r="26" fill="none" stroke="#FC54AA" stroke-width="6"
                     stroke-dasharray="163.4"
@@ -58,19 +67,13 @@
                     style="animation: goalProgress 25s linear forwards;">
                 </circle>
             </svg>
-            <style>
-                @keyframes goalProgress {
-                    0%   { stroke-dashoffset: 163.4; }
-                    80%  { stroke-dashoffset: 30; }
-                    100% { stroke-dashoffset: 10; }
-                }
-            </style>
-            <div class="text-center">
-                <p class="text-sm font-semibold text-gray-900">Generating Goals</p>
-                <p class="text-xs text-gray-500 mt-1">Analysing your strategy…</p>
+            <div style="text-align:center;">
+                <p style="font-size:0.875rem;font-weight:600;color:#111827;">Generating Goals</p>
+                <p style="font-size:0.75rem;color:#6b7280;margin-top:0.25rem;">Analysing your strategy…</p>
             </div>
         </div>
     </div>
+    @endteleport
 
     {{-- Active goals grid --}}
     @if($active->isEmpty())
