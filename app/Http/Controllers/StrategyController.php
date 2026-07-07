@@ -14,6 +14,7 @@ class StrategyController extends Controller
 
     public function downloadSlides(string $id)
     {
+        \Illuminate\Support\Facades\Log::info('PPTX: downloadSlides called', ['id' => $id]);
         $strategy = Strategy::findOrFail($id);
 
         $user = auth()->user();
@@ -104,12 +105,12 @@ class StrategyController extends Controller
         if ($isTitle) {
             $this->addText($slide, $data['title'],
                 800000, 1500000, 7600000, 1200000,
-                36, true, self::WHITE, \PhpOffice\PhpPresentation\Style\Alignment::HORIZONTAL_CENTER
+                36, true, self::WHITE, 'ctr'
             );
             if (!empty($data['bullets'])) {
                 $this->addText($slide, implode(' · ', $data['bullets']),
                     800000, 2900000, 7600000, 600000,
-                    16, false, self::PINK, \PhpOffice\PhpPresentation\Style\Alignment::HORIZONTAL_CENTER
+                    16, false, self::PINK, 'ctr'
                 );
             }
             $line = $slide->createLineShape(800000, 2750000, 8400000, 2750000);
@@ -123,7 +124,7 @@ class StrategyController extends Controller
             $run->getFont()->setBold(true)->setSize(22)
                 ->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
             $header->getActiveParagraph()->getAlignment()
-                ->setHorizontal(\PhpOffice\PhpPresentation\Style\Alignment::HORIZONTAL_LEFT)
+                ->setHorizontal('l')
                 ->setMarginLeft(400000);
 
             $yStart = 850000;
@@ -141,7 +142,7 @@ class StrategyController extends Controller
             $run = $footer->createTextRun('Coral Intelligence Platform');
             $run->getFont()->setSize(9)->setColor(new \PhpOffice\PhpPresentation\Style\Color(self::WHITE));
             $footer->getActiveParagraph()->getAlignment()
-                ->setHorizontal(\PhpOffice\PhpPresentation\Style\Alignment::HORIZONTAL_LEFT)
+                ->setHorizontal('l')
                 ->setMarginLeft(300000);
         }
     }
@@ -156,7 +157,7 @@ class StrategyController extends Controller
 
     private function addText($slide, string $text, int $x, int $y, int $w, int $h,
                              int $size, bool $bold, string $color,
-                             string $align = \PhpOffice\PhpPresentation\Style\Alignment::HORIZONTAL_LEFT): void
+                             string $align = 'l'): void
     {
         $shape = $slide->createRichTextShape();
         $shape->setOffsetX($x)->setOffsetY($y)->setWidth($w)->setHeight($h);
