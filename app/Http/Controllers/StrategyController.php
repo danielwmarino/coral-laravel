@@ -28,7 +28,7 @@ class StrategyController extends Controller
         }
 
         try {
-            $slides = $this->basicParse($strategy->generated_document ?? '', $client->name);
+            $slides = $this->parseSlides($strategy->generated_document ?? '', $client->name);
 
             $prs = new \PhpOffice\PhpPresentation\PhpPresentation();
             $prs->getDocumentProperties()
@@ -51,6 +51,33 @@ class StrategyController extends Controller
             \Illuminate\Support\Facades\Log::error('PPTX error', ['msg' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             abort(500, $e->getMessage());
         }
+    }
+
+    private function parseSlides(string $doc, string $clientName): array
+    {
+        try {
+            $prompt = "Convert this marketing strategy document into a slide deck for {$clientName}. "
+                . "Return a JSON array of slides. Each slide: {\"type\":\"title\" or \"content\", \"title\":\"...\", \"bullets\":[\"...\",\"...\"]}. "
+                . "First slide is type title with client name and one subtitle bullet. "
+                . "Create 8-12 content slides covering key sections. 3-5 bullets per slide, each bullet max 12 words. "
+                . "Return ONLY valid JSON array, no markdown fences.\n\nDOCUMENT:\n" . mb_substr($doc, 0, 5000);
+
+            $response = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 2000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-haiku-4-5-20251001',
+            );
+            $json   = trim($response->content[0]->text ?? '');
+            $json   = preg_replace('/^```(?:json)?\s*/m', '', $json);
+            $json   = preg_replace('/\s*```\s*$/m', '', $json);
+            $slides = json_decode(trim($json), true);
+            if (is_array($slides) && count($slides) >= 2) {
+                return $slides;
+            }
+        } catch (\Throwable $e) {
+            // Fall through to basic parse
+        }
+        return $this->basicParse($doc, $clientName);
     }
 
     private function basicParse(string $doc, string $clientName): array
