@@ -96,6 +96,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // Use 'require' on cloud deployments for encrypted connections
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
