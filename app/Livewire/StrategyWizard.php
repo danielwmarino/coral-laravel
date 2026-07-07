@@ -119,6 +119,11 @@ class StrategyWizard extends Component
         $this->generating = true;
         $data = $this->wizardData();
 
+        $hasCompetitors = trim($data['competitors']) !== '';
+        $competitorSection = $hasCompetitors
+            ? "- Competitors provided: {$data['competitors']}\n- Competitor strengths: {$data['competitorStrengths']}"
+            : "No competitors were provided. Based on the business description, industry, and target audience above, identify 3–5 likely direct competitors. For each, list:\n  - Name and brief description\n  - Key marketing strengths\n  - Key weaknesses / gaps\nInclude this competitor analysis prominently in Section 2 (Situation Analysis).";
+
         $prompt = "You are a senior digital marketing strategist. Create a comprehensive, actionable digital marketing strategy for the following client.
 
 CLIENT: {$client->name}
@@ -136,8 +141,7 @@ CURRENT MARKETING:
 - Current performance: {$data['channelPerformance']}
 
 COMPETITIVE LANDSCAPE:
-- Competitors: {$data['competitors']}
-- Competitor strengths: {$data['competitorStrengths']}
+{$competitorSection}
 
 OBJECTIVES:
 - Primary: {$data['primaryObjective']}
