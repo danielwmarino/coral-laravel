@@ -114,7 +114,7 @@
                     {{ $slot }}
                 @else
                     <div class="flex-1 overflow-y-auto">
-                        <div class="max-w-[1200px] mx-auto px-6 py-8">
+                        <div class="max-w-[1200px] mx-auto px-6 pt-8 pb-20">
                             {{ $slot }}
                         </div>
                     </div>
