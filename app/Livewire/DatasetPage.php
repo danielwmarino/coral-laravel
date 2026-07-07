@@ -39,7 +39,12 @@ class DatasetPage extends Component
     public bool $savingProvider = false;
     public string $providerError = '';
 
-    // Platform data - just display
+    // Analytics connections
+    public bool $connectModalOpen = false;
+    public string $connectingPlatform = '';
+    public array $connectFields = [];   // dynamic field values keyed by field name
+    public string $connectError = '';
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -280,6 +285,113 @@ class DatasetPage extends Component
         }
 
         $this->savingProvider = false;
+    }
+
+    public function openConnectModal(string $platform): void
+    {
+        $this->connectingPlatform = $platform;
+        $this->connectError = '';
+
+        // Pre-fill from existing connection if any
+        $existing = \App\Models\AnalyticsConnection::where('client_id', $this->client?->id)
+            ->where('platform', $platform)->first();
+
+        $fields = $this->platformFields($platform);
+        $this->connectFields = [];
+        foreach ($fields as $field) {
+            $this->connectFields[$field['key']] = '';
+        }
+
+        if ($existing) {
+            foreach ($fields as $field) {
+                if (!$field['secret']) {
+                    $this->connectFields[$field['key']] = $existing->config[$field['key']] ?? '';
+                }
+            }
+        }
+
+        $this->connectModalOpen = true;
+    }
+
+    public function saveConnection(): void
+    {
+        if (!$this->client) return;
+
+        $fields = $this->platformFields($this->connectingPlatform);
+        $rules = [];
+        foreach ($fields as $field) {
+            $rules["connectFields.{$field['key']}"] = $field['required'] ? 'required|string' : 'nullable|string';
+        }
+        $this->validate($rules);
+
+        $this->connectError = '';
+
+        try {
+            // Separate secret (token) from config fields
+            $secretField = collect($fields)->firstWhere('secret', true);
+            $token = $secretField ? ($this->connectFields[$secretField['key']] ?? '') : '';
+            $config = [];
+            foreach ($fields as $field) {
+                if (!$field['secret']) {
+                    $config[$field['key']] = $this->connectFields[$field['key']] ?? '';
+                }
+            }
+
+            $conn = \App\Models\AnalyticsConnection::firstOrNew([
+                'client_id' => $this->client->id,
+                'platform'  => $this->connectingPlatform,
+            ]);
+
+            // Only update token if a new one was provided
+            if ($token) {
+                $conn->oauth_token = Crypt::encryptString($token);
+            }
+            $conn->config = $config;
+            $conn->connected_at = now();
+            $conn->save();
+
+            $this->connectModalOpen = false;
+            $this->connectFields = [];
+            session()->flash('toast', 'Connection saved');
+        } catch (\Exception $e) {
+            $this->connectError = 'Failed to save: ' . $e->getMessage();
+        }
+    }
+
+    public function disconnectPlatform(string $id): void
+    {
+        \App\Models\AnalyticsConnection::where('id', $id)
+            ->where('client_id', $this->client?->id)
+            ->delete();
+        session()->flash('toast', 'Disconnected');
+    }
+
+    private function platformFields(string $platform): array
+    {
+        return match ($platform) {
+            'google_analytics' => [
+                ['key' => 'property_id',   'label' => 'GA4 Property ID',     'placeholder' => 'e.g. 123456789',          'secret' => false, 'required' => true],
+                ['key' => 'api_key',       'label' => 'API Key / Service Account JSON', 'placeholder' => 'Paste your API key or service account JSON', 'secret' => true,  'required' => true],
+            ],
+            'google_search_console' => [
+                ['key' => 'site_url',      'label' => 'Site URL',            'placeholder' => 'https://example.com',      'secret' => false, 'required' => true],
+                ['key' => 'api_key',       'label' => 'API Key / Service Account JSON', 'placeholder' => 'Paste your API key or service account JSON', 'secret' => true,  'required' => true],
+            ],
+            'facebook_ads' => [
+                ['key' => 'account_id',    'label' => 'Ad Account ID',       'placeholder' => 'act_123456789',            'secret' => false, 'required' => true],
+                ['key' => 'access_token',  'label' => 'Access Token',        'placeholder' => 'Paste your access token',  'secret' => true,  'required' => true],
+            ],
+            'linkedin_ads' => [
+                ['key' => 'account_id',    'label' => 'Account ID',          'placeholder' => 'e.g. 123456789',           'secret' => false, 'required' => true],
+                ['key' => 'access_token',  'label' => 'Access Token',        'placeholder' => 'Paste your access token',  'secret' => true,  'required' => true],
+            ],
+            'semrush' => [
+                ['key' => 'api_key',       'label' => 'API Key',             'placeholder' => 'Paste your SEMrush API key', 'secret' => true, 'required' => true],
+            ],
+            default => [
+                ['key' => 'api_key',       'label' => 'API Key',             'placeholder' => 'Paste your API key',       'secret' => true,  'required' => true],
+            ],
+        };
     }
 
     public function deleteProvider(string $id): void
