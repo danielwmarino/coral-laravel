@@ -17,50 +17,15 @@
     @else
 
     {{-- Header --}}
-    <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1">
-                <a href="{{ route('audits.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </a>
-                <h1 class="text-xl font-semibold text-[#003470] truncate">{{ $this->audit->product_name }}</h1>
-                @if($this->audit->status === 'completed')
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium flex-shrink-0">Completed</span>
-                @endif
-            </div>
+    <div class="flex items-start gap-3">
+        <a href="{{ route('audits.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <div>
+            <h1 class="text-xl font-semibold text-[#003470]">{{ $this->audit->product_name }}</h1>
             @if($this->audit->product_url)
-                <p class="text-xs text-gray-400 ml-6">{{ $this->audit->product_url }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ $this->audit->product_url }}</p>
             @endif
-        </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-            @if($this->audit->status === 'completed')
-                <a href="{{ route('audits.report', $this->audit->id) }}"
-                    class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#003470] text-white rounded-lg hover:bg-[#002555] transition-colors font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    View Report
-                </a>
-            @endif
-
-            @if($this->audit->product_url)
-                <button wire:click="runAiAudit" :disabled="$wire.aiRunning"
-                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium disabled:opacity-60">
-                    <span wire:loading.remove wire:target="runAiAudit" class="inline-flex items-center gap-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-                        Run AI Audit
-                    </span>
-                    <span wire:loading wire:target="runAiAudit" class="inline-flex items-center gap-1.5">
-                        <svg class="animate-spin shrink-0 translate-y-0" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        Analysing…
-                    </span>
-                </button>
-            @endif
-
-            <button wire:click="completeAudit"
-                wire:confirm="Mark this audit as complete? You can still view the report and edit responses later."
-                class="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Complete
-            </button>
         </div>
     </div>
 
@@ -133,6 +98,10 @@
                     <div class="h-2 rounded-full bg-[#FC54AA] transition-all duration-500"
                          :style="'width: ' + pct + '%'"></div>
                 </div>
+                <a href="{{ route('audits.index') }}"
+                   class="inline-block mt-5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                    Cancel
+                </a>
             </div>
         @endif
 
