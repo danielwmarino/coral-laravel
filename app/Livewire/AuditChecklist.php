@@ -209,20 +209,20 @@ AUDIT CRITERIA:
 
 Return ONLY a valid JSON object. Every key is a criterion ID. Every value is an object with:
 - "r": the score ("yes", "no", "fail", or "na")
-- "why": 1-2 sentences explaining your assessment with specific evidence
-- "fix": specific actionable fix instruction (required for "no" and "fail"; null for "yes" and "na")
+- "why": ONE sentence max (under 20 words) with specific evidence
+- "fix": ONE sentence max (under 20 words) actionable fix (required for "no" and "fail"; null for "yes" and "na")
 
-Start your response with { and end with }. No markdown fences, no text outside the JSON.
+Keep "why" and "fix" extremely concise — brevity is critical. Start your response with { and end with }. No markdown fences, no text outside the JSON.
 PROMPT;
 
-        set_time_limit(180);
+        set_time_limit(300);
 
         try {
             $result = app(\Anthropic\Client::class)->messages->create(
-                maxTokens: 8000,
+                maxTokens: 16000,
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-sonnet-5',
-                system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation.',
+                system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation. Keep all string values under 20 words.',
             );
 
             // claude-sonnet-5 may return a thinking block first — find the text block
