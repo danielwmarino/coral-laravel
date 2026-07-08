@@ -225,7 +225,9 @@ PROMPT;
                 system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation.',
             );
 
-            $raw  = trim($result->content[0]->text ?? '');
+            // claude-sonnet-5 may return a thinking block first — find the text block
+            $textBlock = collect($result->content)->first(fn($b) => ($b->type ?? '') === 'text');
+            $raw  = trim($textBlock->text ?? '');
             // Strip any markdown fences
             $json = preg_replace('/^```(?:json)?\s*/i', '', $raw);
             $json = preg_replace('/\s*```\s*$/i', '', $json);
