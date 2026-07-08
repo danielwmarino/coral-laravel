@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\KnowledgeChunk;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
 
 class DocumentUploadController extends Controller
 {
