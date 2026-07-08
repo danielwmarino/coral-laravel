@@ -48,10 +48,7 @@ class AuditChecklist extends Component
         $uxItems = AuditChecklistService::uxItems();
         $this->activeCategory = array_key_first($uxItems) ?? '';
 
-        // Auto-run AI audit if mode is ai_assisted and no responses yet
-        if ($this->audit->audit_mode === 'ai_assisted' && empty($this->responses)) {
-            $this->dispatch('auto-run-ai-audit');
-        }
+        // x-init on the "else" card triggers runAiAudit() for ai_assisted mode with no responses
     }
 
     public function setActiveSection(string $section): void
@@ -170,20 +167,25 @@ class AuditChecklist extends Component
             'content' => AuditChecklistService::contentItems(),
         ];
 
-        $itemLines = '';
+        $itemLines  = '';
+        $totalItems = 0;
         foreach ($allSections as $section => $categories) {
             foreach ($categories as $category => $items) {
                 foreach ($items as $item) {
                     $itemLines .= "{$section}.{$item['key']}: {$item['text']}\n";
+                    $totalItems++;
                 }
             }
         }
 
-        $prompt = <<<PROMPT
-You are a professional UX and content auditor. Analyse the scraped website content below and score every single criterion listed. You MUST return a score for all {count(array_merge(...array_values(AuditChecklistService::uxItems()))) + count(array_merge(...array_values(AuditChecklistService::contentItems())))} items — do not skip any.
+        $url         = $this->audit->product_url;
+        $productType = $this->audit->product_type;
 
-WEBSITE: {$this->audit->product_url}
-PRODUCT TYPE: {$this->audit->product_type}
+        $prompt = <<<PROMPT
+You are a professional UX and content auditor. Analyse the scraped website content below and score every single one of the {$totalItems} criteria listed. Do not skip any item.
+
+WEBSITE: {$url}
+PRODUCT TYPE: {$productType}
 
 SCRAPED CONTENT:
 {$pageContent}
@@ -193,10 +195,10 @@ SCRAPED CONTENT:
 SCORING RULES:
 - "yes"  = criterion is clearly met based on the content
 - "no"   = criterion is not met but is fixable (moderate issue)
-- "fail" = critical failure requiring immediate attention (use for the worst 10–15% of issues)
-- "na"   = genuinely not applicable for this product type (use sparingly — only when the criterion literally cannot apply)
+- "fail" = critical failure requiring immediate attention (use for the worst 10-15% of issues)
+- "na"   = genuinely not applicable for this product type (use sparingly)
 
-For accessibility/forms/mobile criteria: infer from HTML evidence — look for <form>, <label>, alt="" attributes, aria-* attributes, <meta name="viewport">, responsive CSS classes, etc. Do NOT mark these "na" just because you cannot see the rendered output.
+For accessibility/forms/mobile criteria: infer from HTML evidence — look for form elements, label tags, alt attributes, aria attributes, viewport meta tag, responsive CSS classes. Do NOT mark these "na" just because you cannot see the rendered output.
 
 ---
 
@@ -205,37 +207,36 @@ AUDIT CRITERIA:
 
 ---
 
-Return ONLY a valid JSON object where every key is a criterion ID and every value is an object with:
+Return ONLY a valid JSON object. Every key is a criterion ID. Every value is an object with:
 - "r": the score ("yes", "no", "fail", or "na")
-- "why": 1–2 sentence explanation of your assessment based on specific evidence from the content
-- "fix": specific actionable instruction for how to fix it (required for "no" and "fail"; null for "yes" and "na")
+- "why": 1-2 sentences explaining your assessment with specific evidence
+- "fix": specific actionable fix instruction (required for "no" and "fail"; null for "yes" and "na")
 
-Example format:
-{
-  "ux.first_value_prop": {"r":"yes","why":"The homepage headline clearly states the service within the first viewport.","fix":null},
-  "ux.forms_labels": {"r":"fail","why":"The contact form uses placeholder text only — no visible <label> elements found in the HTML.","fix":"Add visible <label> elements above each form field. Labels must remain visible when the field is focused or filled."}
-}
-
-No markdown, no explanation outside the JSON.
+Start your response with { and end with }. No markdown fences, no text outside the JSON.
 PROMPT;
 
-        set_time_limit(120);
+        set_time_limit(180);
 
         try {
             $result = app(\Anthropic\Client::class)->messages->create(
-                maxTokens: 4000,
+                maxTokens: 8000,
                 messages: [['role' => 'user', 'content' => $prompt]],
-                model: 'claude-opus-4-8',
-                system: 'You are a structured data extractor. Return only valid JSON, nothing else.',
+                model: 'claude-sonnet-5',
+                system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation.',
             );
 
-            $json = trim($result->content[0]->text ?? '');
-            $json = preg_replace('/^```json\s*/i', '', $json);
-            $json = preg_replace('/\s*```$/', '', $json);
+            $raw  = trim($result->content[0]->text ?? '');
+            // Strip any markdown fences
+            $json = preg_replace('/^```(?:json)?\s*/i', '', $raw);
+            $json = preg_replace('/\s*```\s*$/i', '', $json);
+            // Extract JSON object if there's surrounding text
+            if (preg_match('/\{.*\}/s', $json, $m)) {
+                $json = $m[0];
+            }
             $scores = json_decode($json, true);
 
             if (!is_array($scores)) {
-                $this->aiError   = 'AI returned an unexpected response format. Please try again.';
+                $this->aiError   = 'AI returned an unexpected format (JSON parse failed). Please try again.';
                 $this->aiRunning = false;
                 return;
             }

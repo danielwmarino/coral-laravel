@@ -1,6 +1,4 @@
-<div class="space-y-6"
-    x-data
-    @auto-run-ai-audit.window="$wire.runAiAudit()">
+<div class="space-y-6">
 
     @if(session('toast'))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
@@ -115,18 +113,18 @@
             </div>
 
         @else
-            {{-- Ready to run state --}}
-            <div class="border border-gray-100 rounded-xl bg-white p-10 text-center">
+            {{-- Ready to run / running state (combined so no flash) --}}
+            <div class="border border-gray-100 rounded-xl bg-white p-10 text-center"
+                 x-data
+                 x-init="$wire.runAiAudit()">
                 <div class="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                    <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 </div>
-                <h2 class="text-base font-semibold text-gray-900 mb-2">Ready to Analyse</h2>
-                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">The AI will crawl <strong>{{ $this->audit->product_url }}</strong>, score all 98 UX and content criteria, and generate a full report automatically.</p>
-                <button wire:click="runAiAudit"
-                    class="inline-flex items-center gap-2 px-6 py-3 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-                    Run AI Audit
-                </button>
+                <h2 class="text-base font-semibold text-gray-900 mb-2">Analysing…</h2>
+                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Crawling <strong>{{ $this->audit->product_url }}</strong> and scoring all 98 UX and content criteria. This takes about 30–60 seconds.</p>
+                <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div class="h-2 rounded-full bg-[#FC54AA] animate-pulse" style="width: 60%"></div>
+                </div>
             </div>
         @endif
 
