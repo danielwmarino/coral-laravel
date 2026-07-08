@@ -44,12 +44,12 @@
             @if($this->audit->product_url)
                 <button wire:click="runAiAudit" :disabled="$wire.aiRunning"
                     class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium disabled:opacity-60">
-                    <span wire:loading.remove wire:target="runAiAudit" class="flex items-center gap-1.5">
+                    <span wire:loading.remove wire:target="runAiAudit" class="inline-flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                         Run AI Audit
                     </span>
-                    <span wire:loading wire:target="runAiAudit" class="flex items-center gap-1.5 leading-none">
-                        <svg class="animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    <span wire:loading wire:target="runAiAudit" class="inline-flex items-center gap-1.5">
+                        <svg class="animate-spin shrink-0 translate-y-0" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         Analysing…
                     </span>
                 </button>
