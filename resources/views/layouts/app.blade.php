@@ -64,7 +64,7 @@
 
                     <li class="py-2"><div class="border-t border-white/10 -mx-3"></div></li>
 
-                    <x-nav-item route="dataset" icon="database" label="Data Set" />
+                    <x-nav-item route="dataset" icon="database" label="Dataset" />
 
                     @if(auth()->user()->isSuperAdmin())
                         <x-nav-item route="admin.index" icon="shield" label="Admin" />

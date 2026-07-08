@@ -1,3 +1,3 @@
-<x-app-layout title="Data Set">
+<x-app-layout title="Dataset">
     @livewire('dataset-page')
 </x-app-layout>
