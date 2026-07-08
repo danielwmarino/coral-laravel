@@ -55,20 +55,32 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 Invite User
             </h2>
+            @if($inviteError ?? false)
+                <div class="mb-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">{{ $inviteError }}</div>
+            @endif
             <div class="space-y-3">
-                <input wire:model="inviteEmail" type="email" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]" placeholder="Email address">
-                <input wire:model="inviteName" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]" placeholder="Full name (optional)">
+                <div>
+                    <input wire:model="inviteEmail" type="email" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]" placeholder="Email address *">
+                    @error('inviteEmail') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <input wire:model="inviteName" type="text" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]" placeholder="Full name *">
+                    @error('inviteName') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
                 <select wire:model="inviteRole" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]">
                     <option value="client_user">Client User</option>
                     <option value="agency_staff">Agency Staff</option>
                     <option value="super_admin">Super Admin</option>
                 </select>
-                <select wire:model="inviteClientId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]">
-                    <option value="">No client</option>
-                    @foreach($clients as $c)
-                        <option value="{{ $c->id }}">{{ $c->name }}</option>
-                    @endforeach
-                </select>
+                <div>
+                    <select wire:model="inviteClientId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]">
+                        <option value="">No client</option>
+                        @foreach($clients as $c)
+                            <option value="{{ $c->id }}">{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('inviteClientId') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                </div>
                 <p class="text-xs text-gray-400">
                     {{ $inviteRole === 'client_user' ? 'Client users must be assigned to a client.' : 'Agency staff and super admins can see every client.' }}
                 </p>

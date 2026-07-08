@@ -25,6 +25,7 @@ class AdminPage extends Component
     public string $inviteName = '';
     public string $inviteRole = 'client_user';
     public string $inviteClientId = '';
+    public string $inviteError = '';
 
     public function updatedNewClientName(string $value): void
     {
@@ -88,6 +89,8 @@ class AdminPage extends Component
     {
         abort_unless(auth()->user()->isSuperAdmin(), 403);
 
+        $this->inviteError = '';
+
         $this->validate([
             'inviteEmail'    => 'required|email|unique:users,email',
             'inviteName'     => 'required|string|max:255',
@@ -98,9 +101,10 @@ class AdminPage extends Component
         $tempPassword = Str::password(12, symbols: false);
 
         $user = User::create([
-            'name'     => $this->inviteName,
-            'email'    => $this->inviteEmail,
-            'password' => Hash::make($tempPassword),
+            'name'              => $this->inviteName,
+            'email'             => $this->inviteEmail,
+            'password'          => Hash::make($tempPassword),
+            'email_verified_at' => now(),
         ]);
 
         UserProfile::create([
@@ -109,11 +113,16 @@ class AdminPage extends Component
             'client_id' => $this->inviteClientId ?: null,
         ]);
 
-        if ($this->inviteRole === 'client_user' && $this->inviteClientId) {
-            $client = Client::find($this->inviteClientId);
-            Mail::to($user->email)->send(new ClientInviteMail($user, $client, $tempPassword));
-        } else {
-            Mail::to($user->email)->send(new WelcomeMail($user));
+        try {
+            if ($this->inviteRole === 'client_user' && $this->inviteClientId) {
+                $client = Client::find($this->inviteClientId);
+                Mail::to($user->email)->send(new ClientInviteMail($user, $client, $tempPassword));
+            } else {
+                Mail::to($user->email)->send(new WelcomeMail($user));
+            }
+        } catch (\Exception $e) {
+            $this->inviteError = 'User created but email failed to send: ' . $e->getMessage();
+            return;
         }
 
         $sentTo = $this->inviteName;
