@@ -23,8 +23,8 @@
         </div>
 
         {{-- ── 2. MESSAGE FROM STRATEGIST ── --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
-            <div class="flex items-center justify-between gap-2 mb-3">
+        <div class="mb-6">
+            <div class="flex items-center justify-between gap-2 mb-4">
                 <div class="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     <h2 class="text-sm font-semibold text-[#003470]">Message from your Strategist</h2>
@@ -37,15 +37,17 @@
                     </button>
                 @endif
             </div>
-            @if($isAgency)
-                @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
-            @else
-                @if($client->strategist_message)
-                    <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                @if($isAgency)
+                    @livewire('strategist-message-editor', ['client' => $client], key('msg-'.$client->id))
                 @else
-                    <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
+                    @if($client->strategist_message)
+                        <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
+                    @else
+                        <p class="text-sm text-gray-300 italic">No message from your strategist yet.</p>
+                    @endif
                 @endif
-            @endif
+            </div>
         </div>
 
         {{-- ── 3. DATA OVERVIEW ── --}}
@@ -75,7 +77,7 @@
         </div>
 
         {{-- ── 4. EXECUTIVE SUMMARY ── --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+        <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FC54AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -90,6 +92,7 @@
                     </button>
                 @endif
             </div>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
 
             @if($client->executive_summary)
                 @php
@@ -143,6 +146,7 @@
                     {{ $isAgency ? 'No summary yet — click Regenerate to generate one with AI.' : 'No summary available yet.' }}
                 </p>
             @endif
+        </div>
         </div>
 
         {{-- ── 5. GOALS ── --}}
