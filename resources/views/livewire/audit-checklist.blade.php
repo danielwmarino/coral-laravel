@@ -1,4 +1,6 @@
-<div class="space-y-6">
+<div class="space-y-6"
+    x-data
+    @auto-run-ai-audit.window="$wire.runAiAudit()">
 
     @if(session('toast'))
         <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
@@ -40,14 +42,42 @@
                     View Report
                 </a>
             @endif
+
+            @if($this->audit->product_url)
+                <button wire:click="runAiAudit" :disabled="$wire.aiRunning"
+                    class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium disabled:opacity-60">
+                    <span wire:loading.remove wire:target="runAiAudit" class="flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                        Run AI Audit
+                    </span>
+                    <span wire:loading wire:target="runAiAudit" class="flex items-center gap-1.5">
+                        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        Analysing…
+                    </span>
+                </button>
+            @endif
+
             <button wire:click="completeAudit"
                 wire:confirm="Mark this audit as complete? You can still view the report and edit responses later."
-                class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium">
+                class="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Complete Audit
+                Complete
             </button>
         </div>
     </div>
+
+    @if($this->aiError)
+        <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            {{ $this->aiError }}
+        </div>
+    @endif
+
+    @if($this->aiRunning)
+        <div class="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-sm text-pink-800 flex items-center gap-3">
+            <svg class="animate-spin flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <span>AI is crawling the site and scoring all {{ count(array_merge(...array_values(\App\Services\AuditChecklist::uxItems()))) + count(array_merge(...array_values(\App\Services\AuditChecklist::contentItems()))) }} criteria — this takes about 30–60 seconds…</span>
+        </div>
+    @endif
 
     {{-- Progress bar --}}
     @php

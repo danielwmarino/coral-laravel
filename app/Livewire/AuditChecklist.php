@@ -18,6 +18,9 @@ class AuditChecklist extends Component
     public string $activeSection  = 'ux';
     public string $activeCategory = '';
 
+    public bool $aiRunning = false;
+    public string $aiError = '';
+
     public function mount(string $auditId): void
     {
         $audit = Audit::find($auditId);
@@ -44,6 +47,11 @@ class AuditChecklist extends Component
         // Set default active category
         $uxItems = AuditChecklistService::uxItems();
         $this->activeCategory = array_key_first($uxItems) ?? '';
+
+        // Auto-run AI audit if mode is ai_assisted and no responses yet
+        if ($this->audit->audit_mode === 'ai_assisted' && empty($this->responses)) {
+            $this->dispatch('auto-run-ai-audit');
+        }
     }
 
     public function setActiveSection(string $section): void
@@ -135,6 +143,156 @@ class AuditChecklist extends Component
         ]);
 
         $this->audit->refresh();
+    }
+
+    public function runAiAudit(): void
+    {
+        if (!$this->audit || !$this->audit->product_url) {
+            $this->aiError = 'No URL set for this audit. Edit the audit to add a product URL.';
+            return;
+        }
+
+        $this->aiRunning = true;
+        $this->aiError   = '';
+
+        // Fetch up to 5 pages from the product URL
+        $pageContent = $this->fetchSiteContent($this->audit->product_url, 5);
+
+        if (!$pageContent) {
+            $this->aiError   = 'Could not fetch the site. Check the URL and try again.';
+            $this->aiRunning = false;
+            return;
+        }
+
+        // Build checklist item list for the prompt
+        $allSections = [
+            'ux'      => AuditChecklistService::uxItems(),
+            'content' => AuditChecklistService::contentItems(),
+        ];
+
+        $itemLines = '';
+        foreach ($allSections as $section => $categories) {
+            foreach ($categories as $category => $items) {
+                foreach ($items as $item) {
+                    $itemLines .= "{$section}.{$item['key']}: {$item['text']}\n";
+                }
+            }
+        }
+
+        $prompt = <<<PROMPT
+You are a professional UX and content auditor. You have been given content scraped from a website and a list of audit criteria. Score each criterion based solely on what you can observe from the provided content.
+
+WEBSITE: {$this->audit->product_url}
+
+SCRAPED CONTENT:
+{$pageContent}
+
+---
+
+AUDIT CRITERIA (one per line, format: section.key: description):
+{$itemLines}
+
+---
+
+INSTRUCTIONS:
+Return ONLY a valid JSON object. Keys are the criterion identifiers (e.g. "ux.first_value_prop"), values are one of: "yes", "no", "fail", "na".
+- "yes" = criterion is clearly met
+- "no" = criterion is not met
+- "fail" = criterion is critically failing (use sparingly for the worst issues)
+- "na" = not applicable based on the site type or content available
+
+Do not include any explanation, markdown, or text outside the JSON object.
+PROMPT;
+
+        set_time_limit(120);
+
+        try {
+            $result = app(\Anthropic\Client::class)->messages->create(
+                maxTokens: 4000,
+                messages: [['role' => 'user', 'content' => $prompt]],
+                model: 'claude-opus-4-8',
+                system: 'You are a structured data extractor. Return only valid JSON, nothing else.',
+            );
+
+            $json = trim($result->content[0]->text ?? '');
+            $json = preg_replace('/^```json\s*/i', '', $json);
+            $json = preg_replace('/\s*```$/', '', $json);
+            $scores = json_decode($json, true);
+
+            if (!is_array($scores)) {
+                $this->aiError   = 'AI returned an unexpected response format. Please try again.';
+                $this->aiRunning = false;
+                return;
+            }
+
+            // Save each response
+            foreach ($allSections as $section => $categories) {
+                foreach ($categories as $category => $items) {
+                    foreach ($items as $item) {
+                        $aiKey   = $section . '.' . $item['key'];
+                        $response = $scores[$aiKey] ?? null;
+                        if (!in_array($response, ['yes', 'no', 'fail', 'na'])) continue;
+
+                        $this->responses[$aiKey] = $response;
+
+                        AuditResponse::updateOrCreate(
+                            ['audit_id' => $this->audit->id, 'section' => $section, 'item_key' => $item['key']],
+                            ['category' => $category, 'response' => $response]
+                        );
+                    }
+                }
+            }
+
+            $this->calculateScores();
+            $this->audit->update(['status' => 'completed', 'audit_mode' => 'ai_assisted']);
+            $this->audit->refresh();
+
+            $this->aiRunning = false;
+            session()->flash('toast', 'AI audit complete!');
+            $this->redirect(route('audits.report', $this->audit->id));
+
+        } catch (\Exception $e) {
+            $this->aiError   = 'AI audit failed: ' . $e->getMessage();
+            $this->aiRunning = false;
+        }
+    }
+
+    private function fetchSiteContent(string $startUrl, int $maxPages): string
+    {
+        $context = stream_context_create([
+            'http' => ['timeout' => 10, 'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => true],
+            'ssl'  => ['verify_peer' => false],
+        ]);
+
+        $base    = parse_url($startUrl, PHP_URL_SCHEME) . '://' . parse_url($startUrl, PHP_URL_HOST);
+        $queue   = [$startUrl];
+        $visited = [];
+        $output  = '';
+
+        while (!empty($queue) && count($visited) < $maxPages) {
+            $url = array_shift($queue);
+            if (in_array($url, $visited)) continue;
+            $visited[] = $url;
+
+            $html = @file_get_contents($url, false, $context);
+            if (!$html) continue;
+
+            // Extract links for crawling
+            if (preg_match_all('/<a[^>]+href=["\']([^"\']+)["\'][^>]*>/i', $html, $m)) {
+                foreach ($m[1] as $href) {
+                    if (str_starts_with($href, '/')) $href = $base . $href;
+                    if (str_starts_with($href, $base) && !in_array($href, $visited) && !str_contains($href, '#')) {
+                        $queue[] = $href;
+                    }
+                }
+            }
+
+            $html = preg_replace('/<(script|style|nav|header|footer)[^>]*>.*?<\/\1>/si', '', $html);
+            $text = preg_replace('/\s+/', ' ', strip_tags($html));
+            $output .= "\n\n[PAGE: {$url}]\n" . mb_substr(trim($text), 0, 2000);
+        }
+
+        return trim($output);
     }
 
     public function completeAudit(): void

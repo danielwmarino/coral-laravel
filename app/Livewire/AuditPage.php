@@ -17,6 +17,7 @@ class AuditPage extends Component
     public string $productUrl   = '';
     public string $auditorName  = '';
     public string $productType  = 'marketing_site';
+    public string $auditMode    = 'ai_assisted';
     public string $auditDate    = '';
 
     public function mount(): void
@@ -56,7 +57,7 @@ class AuditPage extends Component
             'product_url'  => $this->productUrl ?: null,
             'auditor_name' => $this->auditorName ?: null,
             'product_type' => $this->productType,
-            'audit_mode'   => 'manual',
+            'audit_mode'   => $this->auditMode,
             'audit_date'   => $this->auditDate,
             'status'       => 'in_progress',
         ]);

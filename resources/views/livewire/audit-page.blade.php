@@ -72,6 +72,30 @@
                     </div>
 
                     <div>
+                        <label class="text-xs font-medium text-gray-700 mb-2 block">Audit Mode</label>
+                        <div class="flex gap-3">
+                            <button type="button" wire:click="$set('auditMode', 'ai_assisted')"
+                                class="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left
+                                    {{ $auditMode === 'ai_assisted' ? 'border-[#FC54AA] bg-pink-50' : 'border-gray-200 hover:border-gray-300' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $auditMode === 'ai_assisted' ? 'text-[#FC54AA]' : 'text-gray-400' }}"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                                <div>
+                                    <p class="text-sm font-medium {{ $auditMode === 'ai_assisted' ? 'text-[#FC54AA]' : 'text-gray-700' }}">AI-Assisted</p>
+                                    <p class="text-xs text-gray-400">AI crawls the site and scores all criteria automatically</p>
+                                </div>
+                            </button>
+                            <button type="button" wire:click="$set('auditMode', 'manual')"
+                                class="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors text-left
+                                    {{ $auditMode === 'manual' ? 'border-[#003470] bg-blue-50' : 'border-gray-200 hover:border-gray-300' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="{{ $auditMode === 'manual' ? 'text-[#003470]' : 'text-gray-400' }}"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                <div>
+                                    <p class="text-sm font-medium {{ $auditMode === 'manual' ? 'text-[#003470]' : 'text-gray-700' }}">Manual Review</p>
+                                    <p class="text-xs text-gray-400">Score each criterion yourself item by item</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
                         <label class="text-xs font-medium text-gray-700 mb-2 block">Product Type <span class="text-red-500">*</span></label>
                         <div class="flex flex-wrap gap-2">
                             @foreach(['marketing_site' => 'Marketing Site', 'web_app' => 'Web App', 'saas_dashboard' => 'SaaS Dashboard', 'ecommerce' => 'eCommerce', 'mobile_app' => 'Mobile App'] as $value => $label)
