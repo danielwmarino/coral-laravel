@@ -23,6 +23,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/goals', fn () => view('goals.index'))->name('goals.index');
     Route::get('/goals/{goal}', fn ($goal) => view('goals.show', ['goalId' => $goal]))->name('goals.show');
 
+    Route::get('/audits', fn () => view('audits.index'))->name('audits.index');
+    Route::get('/audits/{auditId}', fn ($auditId) => view('audits.checklist', ['auditId' => $auditId]))->name('audits.checklist');
+    Route::get('/audits/{auditId}/report', fn ($auditId) => view('audits.report', ['auditId' => $auditId]))->name('audits.report');
+
     Route::get('/recommendations', fn () => view('recommendations.index'))->name('recommendations');
     Route::get('/insights', fn () => view('insights.index'))->name('insights');
     Route::get('/dataset', fn () => view('dataset.index'))->name('dataset');
