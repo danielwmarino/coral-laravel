@@ -92,6 +92,7 @@ class InsightsPage extends Component
     {
         if (!$this->client) return;
         Insight::where('client_id', $this->client->id)
+            ->where('type', 'external')
             ->where('dismissed', false)
             ->where('saved', false)
             ->update(['dismissed' => true]);
