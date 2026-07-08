@@ -131,6 +131,26 @@ class AgentPage extends Component
             }
         }
 
+        // Fetch any URLs mentioned in the user's message and inject as live page context
+        $urlPattern = '/https?:\/\/[^\s\'"<>]+/i';
+        if (preg_match_all($urlPattern, $text, $urlMatches)) {
+            $liveContext = '';
+            foreach (array_slice($urlMatches[0], 0, 3) as $url) {
+                $html = @file_get_contents($url, false, stream_context_create([
+                    'http' => ['timeout' => 10, 'header' => "User-Agent: Mozilla/5.0\r\n"],
+                    'ssl'  => ['verify_peer' => false],
+                ]));
+                if ($html) {
+                    $html = preg_replace('/<(script|style)[^>]*>.*?<\/\1>/si', '', $html);
+                    $pageText = preg_replace('/\s+/', ' ', strip_tags($html));
+                    $liveContext .= "\n[LIVE PAGE: {$url}]\n" . mb_substr(trim($pageText), 0, 3000) . "\n---\n";
+                }
+            }
+            if ($liveContext) {
+                $system .= "\nLIVE PAGE CONTENT (fetched now):\n" . $liveContext;
+            }
+        }
+
         set_time_limit(120);
 
         try {
