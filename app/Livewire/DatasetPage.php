@@ -8,11 +8,14 @@ use App\Models\ClientKnowledgeMeta;
 use App\Models\KnowledgeChunk;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class DatasetPage extends Component
 {
     public ?Client $client = null;
+
+    #[Url(as: 'tab')]
     public string $activeTab = 'summary';
 
     // Summary tab
@@ -44,11 +47,6 @@ class DatasetPage extends Component
         } else {
             $clientId = Session::get('active_client_id');
             $this->client = $clientId ? Client::find($clientId) : null;
-        }
-
-        // Restore active tab from query string (e.g. after upload redirect)
-        if (request()->query('tab')) {
-            $this->activeTab = request()->query('tab');
         }
 
         // Pre-fill website URL from meta
