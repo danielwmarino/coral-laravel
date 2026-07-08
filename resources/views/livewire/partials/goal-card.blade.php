@@ -11,11 +11,11 @@
 
 <a href="{{ route('goals.show', $goal->id) }}" class="block group">
     <div class="bg-white border border-gray-100 rounded-xl hover:border-[#f7a0bc] hover:shadow-sm transition-all">
-        <div class="py-5 px-10">
+        <div class="px-8 py-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-12">
                 <div>
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <p class="text-2xl font-semibold text-[#003470] line-clamp-2">{{ $goal->title }}</p>
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <p class="text-xl font-semibold text-[#003470] leading-snug">{{ $goal->title }}</p>
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs {{ $color }} shrink-0 capitalize">{{ str_replace('_', ' ', $goal->status) }}</span>
                     </div>
                     <div class="space-y-1.5">
@@ -34,7 +34,7 @@
                 <div>
                     @if($goal->strategist_notes)
                         <p class="text-xs font-medium text-[#FC54AA] mb-1">Strategist Notes</p>
-                        <p class="text-gray-500 text-base line-clamp-4 leading-relaxed">{{ $goal->strategist_notes }}</p>
+                        <p class="text-sm text-gray-500 line-clamp-4 leading-relaxed whitespace-pre-line">{{ $goal->strategist_notes }}</p>
                     @endif
                 </div>
             </div>
