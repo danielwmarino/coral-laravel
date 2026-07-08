@@ -2,10 +2,15 @@
 
     <style>
         @media print {
+            /* Un-clip the full-height layout so all content prints */
+            html, body { height: auto !important; overflow: visible !important; background: white !important; }
+            body > div { height: auto !important; overflow: visible !important; display: block !important; }
             aside, header, nav, .no-print { display: none !important; }
-            body { background: white !important; }
+            main, main > div, main > div > div { height: auto !important; overflow: visible !important; }
             #audit-report { padding: 0 !important; }
             .print-break { page-break-before: always; }
+            /* Ensure cards don't split across pages awkwardly */
+            .border { break-inside: avoid; }
         }
     </style>
 

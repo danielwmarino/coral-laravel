@@ -48,8 +48,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
                         Run AI Audit
                     </span>
-                    <span wire:loading wire:target="runAiAudit" class="flex items-center gap-1.5">
-                        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    <span wire:loading wire:target="runAiAudit" class="flex items-center gap-1.5 leading-none">
+                        <svg class="animate-spin shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                         Analysing…
                     </span>
                 </button>
@@ -122,8 +122,16 @@
                 </div>
                 <h2 class="text-base font-semibold text-gray-900 mb-2">Analysing…</h2>
                 <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Crawling <strong>{{ $this->audit->product_url }}</strong> and scoring all 98 UX and content criteria. This takes about 30–60 seconds.</p>
-                <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div class="h-2 rounded-full bg-[#FC54AA] animate-pulse" style="width: 60%"></div>
+                <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden"
+                     x-data="{ pct: 2 }"
+                     x-init="
+                         let tick = setInterval(() => {
+                             if (pct < 88) pct = Math.min(pct + (88 - pct) * 0.03 + 0.3, 88);
+                             else clearInterval(tick);
+                         }, 500);
+                     ">
+                    <div class="h-2 rounded-full bg-[#FC54AA] transition-all duration-500"
+                         :style="'width: ' + pct + '%'"></div>
                 </div>
             </div>
         @endif
