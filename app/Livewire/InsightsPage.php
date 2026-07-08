@@ -88,6 +88,16 @@ class InsightsPage extends Component
         Insight::where('id', $id)->where('client_id', $this->client?->id)->update(['dismissed' => true]);
     }
 
+    public function dismissAll(): void
+    {
+        if (!$this->client) return;
+        Insight::where('client_id', $this->client->id)
+            ->where('dismissed', false)
+            ->where('saved', false)
+            ->update(['dismissed' => true]);
+        session()->flash('toast', 'Unsaved insights dismissed');
+    }
+
     public function render(): \Illuminate\View\View
     {
         $insights = $this->client

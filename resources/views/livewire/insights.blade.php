@@ -14,6 +14,13 @@
             <h1 class="text-2xl font-semibold text-[#003470]">Insights</h1>
             <p class="text-sm text-gray-500 mt-1">External market intelligence and trends</p>
         </div>
+        <div class="flex items-center gap-2">
+        @if(!$insights->isEmpty() && $insights->where('saved', false)->isNotEmpty())
+            <button wire:click="dismissAll" wire:confirm="Dismiss all unsaved insights?"
+                class="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 rounded-lg transition-colors whitespace-nowrap">
+                Dismiss All
+            </button>
+        @endif
         @if($isAgency)
             <button wire:click="generate" wire:loading.attr="disabled"
                 class="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60 whitespace-nowrap">
@@ -25,6 +32,7 @@
                 <span wire:loading wire:target="generate">Generating…</span>
             </button>
         @endif
+        </div>
     </div>
 
     @if($insights->isEmpty())
