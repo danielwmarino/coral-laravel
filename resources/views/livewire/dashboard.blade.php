@@ -99,7 +99,7 @@
                     <p class="text-sm font-semibold text-gray-900 leading-snug mb-4">{{ $execData['verdict'] }}</p>
 
                     {{-- Callouts --}}
-                    <div class="divide-y divide-gray-100">
+                    <div class="divide-y divide-gray-100 border-t border-gray-100">
                         @foreach($execData['callouts'] ?? [] as $callout)
                             @php $cfg = $typeConfig[$callout['type']] ?? $typeConfig['watch']; @endphp
                             <div class="flex items-start gap-3 py-2.5">
