@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/Favicon.png">
+    <link rel="apple-touch-icon" href="/Favicon.png">
     <title>{{ config('app.name', 'Coral') }} — {{ $title ?? 'Dashboard' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
