@@ -103,11 +103,18 @@ class AgentPage extends Component
             $system .= "ACTIVE GOALS:\n" . $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n") . "\n\n";
         }
 
-        // Inject up to 10 knowledge chunks (documents + website)
-        $chunks = KnowledgeChunk::where('client_id', $this->client->id)
+        // Inject knowledge chunks — up to 8 document chunks + up to 8 website chunks
+        $docChunks  = KnowledgeChunk::where('client_id', $this->client->id)
+            ->where('source_type', 'document')
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(8)
             ->get();
+        $webChunks  = KnowledgeChunk::where('client_id', $this->client->id)
+            ->where('source_type', 'website')
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get();
+        $chunks = $docChunks->concat($webChunks);
         if ($chunks->isNotEmpty()) {
             $system .= "KNOWLEDGE BASE:\n";
             foreach ($chunks as $chunk) {
