@@ -192,6 +192,9 @@
                         'category'        => $categoryName,
                     ];
                 }
+                $order = ['fail' => 0, 'no' => 1, 'yes' => 2, 'na' => 3, null => 4];
+                usort($catItems, fn($a, $b) => ($order[$a['response']] ?? 4) <=> ($order[$b['response']] ?? 4));
+
                 $catScore = $categoryScores[$catKey] ?? null;
                 $categoryFindings[$catKey] = [
                     'section'  => $sectionName,
