@@ -222,7 +222,6 @@ PROMPT;
                 maxTokens: 8000,
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-sonnet-5',
-                temperature: 0,
                 system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation.',
             );
 
