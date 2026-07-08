@@ -2,8 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Mail\ClientInviteMail;
+use App\Mail\WelcomeMail;
 use App\Models\Client;
+use App\Models\User;
 use App\Models\UserProfile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class AdminPage extends Component
@@ -56,11 +62,61 @@ class AdminPage extends Component
 
     public function updateUserRole(string $userId, string $role, ?string $clientId): void
     {
+        $profile = UserProfile::where('user_id', $userId)->first();
+        $wasUnassigned = !$profile || !$profile->role;
+
         UserProfile::where('user_id', $userId)->update([
             'role' => $role,
             'client_id' => $clientId === 'none' || !$clientId ? null : $clientId,
         ]);
+
+        // Send welcome email the first time a role is assigned
+        if ($wasUnassigned && $role) {
+            $user = User::find($userId);
+            if ($user) {
+                Mail::to($user->email)->send(new WelcomeMail($user));
+            }
+        }
+
         session()->flash('toast', 'User updated');
+    }
+
+    public function sendInvite(): void
+    {
+        $this->validate([
+            'inviteEmail'    => 'required|email',
+            'inviteName'     => 'required|string|max:255',
+            'inviteRole'     => 'required|in:client_user,agency_staff,super_admin',
+            'inviteClientId' => 'nullable|exists:clients,id',
+        ]);
+
+        $tempPassword = Str::password(12, symbols: false);
+
+        $user = User::create([
+            'name'     => $this->inviteName,
+            'email'    => $this->inviteEmail,
+            'password' => Hash::make($tempPassword),
+        ]);
+
+        UserProfile::create([
+            'user_id'   => $user->id,
+            'role'      => $this->inviteRole,
+            'client_id' => $this->inviteClientId ?: null,
+        ]);
+
+        if ($this->inviteRole === 'client_user' && $this->inviteClientId) {
+            $client = Client::find($this->inviteClientId);
+            Mail::to($user->email)->send(new ClientInviteMail($user, $client, $tempPassword));
+        } else {
+            Mail::to($user->email)->send(new WelcomeMail($user));
+        }
+
+        $this->inviteEmail = '';
+        $this->inviteName = '';
+        $this->inviteRole = 'client_user';
+        $this->inviteClientId = '';
+
+        session()->flash('toast', 'Invite sent to ' . $this->inviteName);
     }
 
     public function render(): \Illuminate\View\View
