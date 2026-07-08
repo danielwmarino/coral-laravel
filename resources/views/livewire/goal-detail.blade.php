@@ -218,6 +218,18 @@
             </script>
         </div>
 
+        {{-- Strategist Notes --}}
+        @if($goal->strategist_notes || $isAgency)
+            <div class="bg-white border border-gray-100 rounded-xl p-6">
+                <h2 class="text-sm font-semibold text-[#FC54AA] mb-2">Strategist Notes</h2>
+                @if($goal->strategist_notes)
+                    <p class="text-sm text-gray-700 leading-relaxed">{{ $goal->strategist_notes }}</p>
+                @else
+                    <p class="text-sm text-gray-400">No notes yet. Edit the goal to add strategist notes.</p>
+                @endif
+            </div>
+        @endif
+
         {{-- ── Linked Analytics ── --}}
         @php $analyticsLinks = $goal->analyticsLinks()->with('analyticsConnection')->get(); @endphp
         <div class="bg-white border border-gray-100 rounded-xl p-6">
@@ -313,18 +325,6 @@
                 @endif
             </div>
         </div>
-
-        {{-- Strategist Notes --}}
-        @if($goal->strategist_notes || $isAgency)
-            <div class="bg-white border border-gray-100 rounded-xl p-6">
-                <h2 class="text-sm font-semibold text-[#FC54AA] mb-2">Strategist Notes</h2>
-                @if($goal->strategist_notes)
-                    <p class="text-sm text-gray-700 leading-relaxed">{{ $goal->strategist_notes }}</p>
-                @else
-                    <p class="text-sm text-gray-400">No notes yet. Edit the goal to add strategist notes.</p>
-                @endif
-            </div>
-        @endif
 
         {{-- Edit Modal --}}
         @if($editOpen)
