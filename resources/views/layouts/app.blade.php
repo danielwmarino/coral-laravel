@@ -7,14 +7,6 @@
     <title>{{ config('app.name', 'Coral') }} — {{ $title ?? 'Dashboard' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
-    <style>
-        .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; border-color: #e5e7eb; }
-        .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; border-color: #e5e7eb; font-size: 0.875rem; }
-        .ql-editor { min-height: 120px; color: #374151; }
-        .ql-editor.ql-blank::before { color: #d1d5db; font-style: italic; }
-    </style>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased" x-data="{ sidebarOpen: false }">
 
