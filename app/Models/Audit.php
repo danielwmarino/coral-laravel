@@ -23,10 +23,12 @@ class Audit extends Model
         'ux_score',
         'content_score',
         'overall_score',
+        'crawled_pages',
     ];
 
     protected $casts = [
-        'audit_date' => 'date',
+        'audit_date'    => 'date',
+        'crawled_pages' => 'array',
     ];
 
     public function client(): BelongsTo

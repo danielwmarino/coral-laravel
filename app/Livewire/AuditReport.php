@@ -22,13 +22,13 @@ class AuditReport extends Component
         $audit = Audit::with('responses')->find($auditId);
 
         if (!$audit) {
-            $this->redirect(route('audits.index'));
+            $this->redirect(route('audits'));
             return;
         }
 
         $client = $this->resolveClient();
         if (!$client || $audit->client_id !== $client->id) {
-            $this->redirect(route('audits.index'));
+            $this->redirect(route('audits'));
             return;
         }
 

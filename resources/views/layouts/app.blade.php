@@ -64,6 +64,7 @@
 
                     <x-nav-item route="recommendations" icon="lightbulb" label="Recommendations" />
                     <x-nav-item route="insights" icon="trending-up" label="Insights" />
+                    <x-nav-item route="audits" icon="clipboard-check" label="Audits" />
 
                     <li class="py-2"><div class="border-t border-white/10 -mx-3"></div></li>
 

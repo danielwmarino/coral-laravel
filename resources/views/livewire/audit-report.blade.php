@@ -17,7 +17,7 @@
     @if(!$this->audit)
         <div class="border border-dashed rounded-xl p-12 text-center">
             <p class="text-sm text-gray-500">Audit not found.</p>
-            <a href="{{ route('audits.index') }}" class="text-xs text-[#FC54AA] hover:underline mt-2 inline-block">Back to Audits</a>
+            <a href="{{ route('audits') }}" class="text-xs text-[#FC54AA] hover:underline mt-2 inline-block">Back to Audits</a>
         </div>
     @else
 
@@ -340,6 +340,27 @@
             </div>
         </div>
     @endforeach
+
+    {{-- Pages Checked --}}
+    @if(!empty($this->audit->crawled_pages))
+        <div class="border border-gray-100 rounded-xl bg-white overflow-hidden">
+            <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <h2 class="text-sm font-semibold text-gray-900">Pages Checked ({{ count($this->audit->crawled_pages) }})</h2>
+            </div>
+            <ul class="divide-y divide-gray-50">
+                @foreach($this->audit->crawled_pages as $i => $pageUrl)
+                    <li class="px-5 py-3 flex items-center gap-3">
+                        <span class="text-xs text-gray-400 w-5 text-right flex-shrink-0">{{ $i + 1 }}</span>
+                        <a href="{{ $pageUrl }}" target="_blank"
+                           class="text-sm text-[#003470] hover:text-[#FC54AA] hover:underline truncate transition-colors">
+                            {{ $pageUrl }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     {{-- Footer links --}}
     <div class="flex items-center justify-between no-print">

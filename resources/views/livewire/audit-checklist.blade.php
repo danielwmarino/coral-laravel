@@ -12,13 +12,13 @@
     @if(!$this->audit)
         <div class="border border-dashed rounded-xl p-12 text-center">
             <p class="text-sm text-gray-500">Audit not found.</p>
-            <a href="{{ route('audits.index') }}" class="text-xs text-[#FC54AA] hover:underline mt-2 inline-block">Back to Audits</a>
+            <a href="{{ route('audits') }}" class="text-xs text-[#FC54AA] hover:underline mt-2 inline-block">Back to Audits</a>
         </div>
     @else
 
     {{-- Header --}}
     <div class="flex items-start gap-3">
-        <a href="{{ route('audits.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-1">
+        <a href="{{ route('audits') }}" class="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 mt-1">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </a>
         <div>
@@ -98,7 +98,7 @@
                     <div class="h-2 rounded-full bg-[#FC54AA] transition-all duration-500"
                          :style="'width: ' + pct + '%'"></div>
                 </div>
-                <a href="{{ route('audits.index') }}"
+                <a href="{{ route('audits') }}"
                    class="inline-block mt-5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
                     Cancel
                 </a>

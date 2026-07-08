@@ -26,14 +26,14 @@ class AuditChecklist extends Component
         $audit = Audit::find($auditId);
 
         if (!$audit) {
-            $this->redirect(route('audits.index'));
+            $this->redirect(route('audits'));
             return;
         }
 
         // Verify ownership
         $client = $this->resolveClient();
         if (!$client || $audit->client_id !== $client->id) {
-            $this->redirect(route('audits.index'));
+            $this->redirect(route('audits'));
             return;
         }
 
@@ -153,7 +153,7 @@ class AuditChecklist extends Component
         $this->aiError   = '';
 
         // Fetch up to 5 pages from the product URL
-        $pageContent = $this->fetchSiteContent($this->audit->product_url, 5);
+        [$pageContent, $crawledUrls] = $this->fetchSiteContent($this->audit->product_url, 5);
 
         if (!$pageContent) {
             $this->aiError   = 'Could not fetch the site. Check the URL and try again.';
@@ -274,7 +274,7 @@ PROMPT;
             }
 
             $this->calculateScores();
-            $this->audit->update(['status' => 'completed', 'audit_mode' => 'ai_assisted']);
+            $this->audit->update(['status' => 'completed', 'audit_mode' => 'ai_assisted', 'crawled_pages' => $crawledUrls]);
             $this->audit->refresh();
 
             $this->aiRunning = false;
@@ -287,7 +287,7 @@ PROMPT;
         }
     }
 
-    private function fetchSiteContent(string $startUrl, int $maxPages): string
+    private function fetchSiteContent(string $startUrl, int $maxPages): array
     {
         $context = stream_context_create([
             'http' => ['timeout' => 10, 'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => true],
@@ -327,7 +327,7 @@ PROMPT;
             $output .= "\n\n[PAGE: {$url}]\n" . mb_substr(trim($text), 0, 2000);
         }
 
-        return trim($output);
+        return [trim($output), $visited];
     }
 
     public function completeAudit(): void
