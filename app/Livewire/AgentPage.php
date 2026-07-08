@@ -103,22 +103,31 @@ class AgentPage extends Component
             $system .= "ACTIVE GOALS:\n" . $goals->map(fn($g) => "- {$g->title} ({$g->status})")->join("\n") . "\n\n";
         }
 
-        // Inject knowledge chunks — up to 8 document chunks + up to 8 website chunks
-        $docChunks  = KnowledgeChunk::where('client_id', $this->client->id)
+        // Inject document chunks (up to 8, newest first)
+        $docChunks = KnowledgeChunk::where('client_id', $this->client->id)
             ->where('source_type', 'document')
             ->orderBy('created_at', 'desc')
             ->limit(8)
             ->get();
-        $webChunks  = KnowledgeChunk::where('client_id', $this->client->id)
+
+        // Inject one chunk per crawled page so all pages are represented
+        $webPageLabels = KnowledgeChunk::where('client_id', $this->client->id)
             ->where('source_type', 'website')
-            ->orderBy('created_at', 'desc')
-            ->limit(8)
-            ->get();
-        $chunks = $docChunks->concat($webChunks);
-        if ($chunks->isNotEmpty()) {
+            ->distinct()
+            ->pluck('source_label');
+        $webChunks = $webPageLabels->map(fn($label) =>
+            KnowledgeChunk::where('client_id', $this->client->id)
+                ->where('source_type', 'website')
+                ->where('source_label', $label)
+                ->orderBy('id')
+                ->first()
+        )->filter();
+
+        $allChunks = $docChunks->concat($webChunks);
+        if ($allChunks->isNotEmpty()) {
             $system .= "KNOWLEDGE BASE:\n";
-            foreach ($chunks as $chunk) {
-                $system .= "[{$chunk->source_label}]: " . mb_substr($chunk->chunk_text, 0, 500) . "\n---\n";
+            foreach ($allChunks as $chunk) {
+                $system .= "[{$chunk->source_label}]: " . mb_substr($chunk->chunk_text, 0, 400) . "\n---\n";
             }
         }
 
