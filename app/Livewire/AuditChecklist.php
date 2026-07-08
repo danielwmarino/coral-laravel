@@ -222,6 +222,7 @@ PROMPT;
                 maxTokens: 8000,
                 messages: [['role' => 'user', 'content' => $prompt]],
                 model: 'claude-sonnet-5',
+                temperature: 0,
                 system: 'You are a JSON-only responder. Output must start with { and end with }. No markdown, no explanation.',
             );
 
@@ -307,14 +308,19 @@ PROMPT;
             $html = @file_get_contents($url, false, $context);
             if (!$html) continue;
 
-            // Extract links for crawling
+            // Extract links for crawling — collect then sort for deterministic order
+            $newLinks = [];
             if (preg_match_all('/<a[^>]+href=["\']([^"\']+)["\'][^>]*>/i', $html, $m)) {
                 foreach ($m[1] as $href) {
                     if (str_starts_with($href, '/')) $href = $base . $href;
                     if (str_starts_with($href, $base) && !in_array($href, $visited) && !str_contains($href, '#')) {
-                        $queue[] = $href;
+                        $newLinks[] = $href;
                     }
                 }
+            }
+            sort($newLinks);
+            foreach ($newLinks as $href) {
+                if (!in_array($href, $queue)) $queue[] = $href;
             }
 
             $html = preg_replace('/<(script|style|nav|header|footer)[^>]*>.*?<\/\1>/si', '', $html);
