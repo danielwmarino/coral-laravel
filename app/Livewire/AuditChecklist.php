@@ -21,6 +21,9 @@ class AuditChecklist extends Component
     public bool $aiRunning = false;
     public string $aiError = '';
 
+    public array $pageList  = [];
+    public string $newPage  = '';
+
     public function mount(string $auditId): void
     {
         $audit = Audit::find($auditId);
@@ -44,11 +47,36 @@ class AuditChecklist extends Component
             $this->responses[$r->section . '.' . $r->item_key] = $r->response;
         }
 
+        // Load custom pages (seed with product URL if none saved yet)
+        $this->pageList = $audit->custom_pages ?? ($audit->product_url ? [$audit->product_url] : []);
+
         // Set default active category
         $uxItems = AuditChecklistService::uxItems();
         $this->activeCategory = array_key_first($uxItems) ?? '';
+    }
 
-        // x-init on the "else" card triggers runAiAudit() for ai_assisted mode with no responses
+    public function addPage(): void
+    {
+        $url = trim($this->newPage);
+        if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) return;
+        if (!in_array($url, $this->pageList)) {
+            $this->pageList[] = $url;
+        }
+        $this->newPage = '';
+        $this->savePageList();
+    }
+
+    public function removePage(int $index): void
+    {
+        array_splice($this->pageList, $index, 1);
+        $this->savePageList();
+    }
+
+    private function savePageList(): void
+    {
+        if ($this->audit) {
+            $this->audit->update(['custom_pages' => array_values($this->pageList)]);
+        }
     }
 
     public function setActiveSection(string $section): void
@@ -152,11 +180,19 @@ class AuditChecklist extends Component
         $this->aiRunning = true;
         $this->aiError   = '';
 
-        // Fetch up to 5 pages from the product URL
-        [$pageContent, $crawledUrls] = $this->fetchSiteContent($this->audit->product_url, 5);
+        // Use custom page list if set, otherwise auto-crawl from the product URL
+        $urlsToFetch = !empty($this->pageList) ? $this->pageList : ($this->audit->product_url ? [$this->audit->product_url] : []);
+
+        if (empty($urlsToFetch)) {
+            $this->aiError   = 'No pages to audit. Add at least one URL.';
+            $this->aiRunning = false;
+            return;
+        }
+
+        [$pageContent, $crawledUrls] = $this->fetchPages($urlsToFetch);
 
         if (!$pageContent) {
-            $this->aiError   = 'Could not fetch the site. Check the URL and try again.';
+            $this->aiError   = 'Could not fetch any pages. Check the URLs and try again.';
             $this->aiRunning = false;
             return;
         }
@@ -287,47 +323,27 @@ PROMPT;
         }
     }
 
-    private function fetchSiteContent(string $startUrl, int $maxPages): array
+    private function fetchPages(array $urls): array
     {
         $context = stream_context_create([
             'http' => ['timeout' => 10, 'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => true],
             'ssl'  => ['verify_peer' => false],
         ]);
 
-        $base    = parse_url($startUrl, PHP_URL_SCHEME) . '://' . parse_url($startUrl, PHP_URL_HOST);
-        $queue   = [$startUrl];
-        $visited = [];
+        $fetched = [];
         $output  = '';
 
-        while (!empty($queue) && count($visited) < $maxPages) {
-            $url = array_shift($queue);
-            if (in_array($url, $visited)) continue;
-            $visited[] = $url;
-
+        foreach ($urls as $url) {
             $html = @file_get_contents($url, false, $context);
             if (!$html) continue;
 
-            // Extract links for crawling — collect then sort for deterministic order
-            $newLinks = [];
-            if (preg_match_all('/<a[^>]+href=["\']([^"\']+)["\'][^>]*>/i', $html, $m)) {
-                foreach ($m[1] as $href) {
-                    if (str_starts_with($href, '/')) $href = $base . $href;
-                    if (str_starts_with($href, $base) && !in_array($href, $visited) && !str_contains($href, '#')) {
-                        $newLinks[] = $href;
-                    }
-                }
-            }
-            sort($newLinks);
-            foreach ($newLinks as $href) {
-                if (!in_array($href, $queue)) $queue[] = $href;
-            }
-
+            $fetched[] = $url;
             $html = preg_replace('/<(script|style|nav|header|footer)[^>]*>.*?<\/\1>/si', '', $html);
             $text = preg_replace('/\s+/', ' ', strip_tags($html));
-            $output .= "\n\n[PAGE: {$url}]\n" . mb_substr(trim($text), 0, 2000);
+            $output .= "\n\n[PAGE: {$url}]\n" . mb_substr(trim($text), 0, 2500);
         }
 
-        return [trim($output), $visited];
+        return [trim($output), $fetched];
     }
 
     public function completeAudit(): void

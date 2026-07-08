@@ -45,7 +45,7 @@
                     <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                 </div>
                 <h2 class="text-base font-semibold text-gray-900 mb-2">AI Audit in Progress</h2>
-                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Crawling the site and scoring all 98 criteria across UX and content. This takes about 30–60 seconds.</p>
+                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Fetching {{ count($pageList) }} page{{ count($pageList) !== 1 ? 's' : '' }} and scoring all 98 UX and content criteria. This takes about 30–60 seconds.</p>
                 <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
                     <div class="h-2 rounded-full bg-[#FC54AA] animate-pulse" style="width: 70%"></div>
                 </div>
@@ -78,30 +78,52 @@
             </div>
 
         @else
-            {{-- Ready to run / running state (combined so no flash) --}}
-            <div class="border border-gray-100 rounded-xl bg-white p-10 text-center"
-                 x-data
-                 x-init="$wire.runAiAudit()">
-                <div class="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            {{-- Page manager — user configures pages then clicks Run --}}
+            <div class="border border-gray-100 rounded-xl bg-white overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-900">Pages to Audit</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Add up to 10 pages. The AI will analyse all of them.</p>
+                    </div>
+                    <button wire:click="runAiAudit" wire:loading.attr="disabled"
+                        :disabled="$wire.pageList.length === 0"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium disabled:opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                        Run AI Audit
+                    </button>
                 </div>
-                <h2 class="text-base font-semibold text-gray-900 mb-2">Analysing…</h2>
-                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Crawling <strong>{{ $this->audit->product_url }}</strong> and scoring all 98 UX and content criteria. This takes about 30–60 seconds.</p>
-                <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden"
-                     x-data="{ pct: 2 }"
-                     x-init="
-                         let tick = setInterval(() => {
-                             if (pct < 88) pct = Math.min(pct + (88 - pct) * 0.03 + 0.3, 88);
-                             else clearInterval(tick);
-                         }, 500);
-                     ">
-                    <div class="h-2 rounded-full bg-[#FC54AA] transition-all duration-500"
-                         :style="'width: ' + pct + '%'"></div>
-                </div>
-                <a href="{{ route('audits') }}"
-                   class="inline-block mt-5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                    Cancel
-                </a>
+
+                {{-- Page list --}}
+                <ul class="divide-y divide-gray-50">
+                    @forelse($pageList as $i => $pageUrl)
+                        <li class="flex items-center gap-3 px-6 py-3">
+                            <span class="text-xs text-gray-400 w-5 text-right flex-shrink-0">{{ $i + 1 }}</span>
+                            <span class="flex-1 text-sm text-gray-700 truncate">{{ $pageUrl }}</span>
+                            <button wire:click="removePage({{ $i }})"
+                                class="flex-shrink-0 p-1 text-gray-300 hover:text-red-500 transition-colors rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </li>
+                    @empty
+                        <li class="px-6 py-6 text-center text-sm text-gray-400">No pages added yet. Add a URL below.</li>
+                    @endforelse
+                </ul>
+
+                {{-- Add URL --}}
+                @if(count($pageList) < 10)
+                    <div class="px-6 py-4 border-t border-gray-100 flex gap-2">
+                        <input wire:model="newPage" type="url"
+                            wire:keydown.enter="addPage"
+                            placeholder="https://example.com/page"
+                            class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA]">
+                        <button wire:click="addPage"
+                            class="px-3 py-2 text-sm bg-[#003470] hover:bg-[#002555] text-white rounded-lg transition-colors font-medium">
+                            Add
+                        </button>
+                    </div>
+                @else
+                    <p class="px-6 py-3 text-xs text-gray-400 border-t border-gray-100">Maximum of 10 pages reached.</p>
+                @endif
             </div>
         @endif
 

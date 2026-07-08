@@ -24,11 +24,13 @@ class Audit extends Model
         'content_score',
         'overall_score',
         'crawled_pages',
+        'custom_pages',
     ];
 
     protected $casts = [
         'audit_date'    => 'date',
         'crawled_pages' => 'array',
+        'custom_pages'  => 'array',
     ];
 
     public function client(): BelongsTo
