@@ -41,6 +41,15 @@ class AuditPage extends Component
             ->get();
     }
 
+    public function deleteAudit(string $auditId): void
+    {
+        $audit = \App\Models\Audit::find($auditId);
+        if ($audit && $this->client && $audit->client_id === $this->client->id) {
+            $audit->delete();
+            session()->flash('toast', 'Audit deleted.');
+        }
+    }
+
     public function createAudit(): void
     {
         $this->validate([

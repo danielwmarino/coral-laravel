@@ -199,7 +199,7 @@
                                 @endif
                             </div>
 
-                            <div class="flex-shrink-0">
+                            <div class="flex-shrink-0 flex items-center gap-2">
                                 @if($audit->status === 'completed')
                                     <a href="{{ route('audits.report', $audit->id) }}"
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#003470] text-white rounded-lg hover:bg-[#002555] transition-colors">
@@ -211,6 +211,11 @@
                                         Continue Audit
                                     </a>
                                 @endif
+                                <button wire:click="deleteAudit('{{ $audit->id }}')"
+                                    wire:confirm="Delete this audit? This cannot be undone."
+                                    class="p-1.5 text-gray-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                </button>
                             </div>
                         </div>
                     </div>

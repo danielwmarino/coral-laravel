@@ -170,119 +170,173 @@
         </div>
     </div>
 
-    {{-- Priority Actions (Fails) --}}
-    @if(count($failedItems) > 0)
-        <div class="border border-red-100 rounded-xl bg-white overflow-hidden">
-            <div class="px-5 py-4 bg-red-50 border-b border-red-100">
-                <h2 class="text-sm font-semibold text-red-700 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    Critical Issues — Fix Immediately ({{ count($failedItems) }})
-                </h2>
-            </div>
-            <div class="divide-y divide-red-50">
-                @foreach($failedItems as $item)
-                    <div class="px-5 py-4">
-                        <div class="flex items-start gap-3">
-                            <span class="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </span>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900">{{ $item['text'] }}</p>
-                                <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
-                                @if($item['reason'])
-                                    <p class="text-sm text-red-700 mt-2">{{ $item['reason'] }}</p>
-                                @endif
-                                @if($item['fix_instruction'])
-                                    <div class="mt-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                                        <p class="text-xs font-semibold text-red-600 mb-0.5">How to fix</p>
-                                        <p class="text-sm text-red-800">{{ $item['fix_instruction'] }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+    {{-- Findings by Category (accordion) --}}
+    @php
+        // Build a map: section|category → [items with response data]
+        $allSectionsMap = ['ux' => $uxItems, 'content' => $contentItems];
+        $categoryFindings = [];
+        foreach ($allSectionsMap as $sectionName => $categories) {
+            foreach ($categories as $categoryName => $items) {
+                $catKey = $sectionName . '|' . $categoryName;
+                $catItems = [];
+                foreach ($items as $item) {
+                    $entry    = $responses[$sectionName . '.' . $item['key']] ?? null;
+                    $response = is_array($entry) ? ($entry['response'] ?? null) : $entry;
+                    $catItems[] = [
+                        'text'            => $item['text'],
+                        'key'             => $item['key'],
+                        'response'        => $response,
+                        'reason'          => is_array($entry) ? ($entry['reason'] ?? null) : null,
+                        'fix_instruction' => is_array($entry) ? ($entry['fix_instruction'] ?? null) : null,
+                        'section'         => $sectionName,
+                        'category'        => $categoryName,
+                    ];
+                }
+                $catScore = $categoryScores[$catKey] ?? null;
+                $categoryFindings[$catKey] = [
+                    'section'  => $sectionName,
+                    'category' => $categoryName,
+                    'items'    => $catItems,
+                    'score'    => $catScore,
+                ];
+            }
+        }
+        $sectionLabels = ['ux' => 'UX Audit', 'content' => 'Content Audit'];
+        $lastSectionLabel = null;
+    @endphp
 
-    {{-- Issues to Address --}}
-    @if(count($noItems) > 0)
-        <div class="border border-orange-100 rounded-xl bg-white overflow-hidden">
-            <div class="px-5 py-4 bg-orange-50 border-b border-orange-100">
-                <h2 class="text-sm font-semibold text-orange-700">Issues to Address ({{ count($noItems) }})</h2>
-            </div>
-            <div class="divide-y divide-orange-50">
-                @foreach($noItems as $item)
-                    <div class="px-5 py-4">
-                        <div class="flex items-start gap-3">
-                            <span class="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </span>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900">{{ $item['text'] }}</p>
-                                <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
-                                @if($item['reason'])
-                                    <p class="text-sm text-gray-600 mt-2">{{ $item['reason'] }}</p>
-                                @endif
-                                @if($item['fix_instruction'])
-                                    <div class="mt-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                                        <p class="text-xs font-semibold text-amber-700 mb-0.5">How to fix</p>
-                                        <p class="text-sm text-amber-900">{{ $item['fix_instruction'] }}</p>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+    @foreach($categoryFindings as $catKey => $catData)
+        @php
+            $cat       = $catData['score'];
+            $catItems  = $catData['items'];
+            $catPct    = ($cat && $cat['total'] > 0) ? ($cat['score'] ?? 0) : null;
+            $failCount = collect($catItems)->where('response', 'fail')->count();
+            $noCount   = collect($catItems)->where('response', 'no')->count();
+            $yesCount  = collect($catItems)->where('response', 'yes')->count();
+            $issueCount = $failCount + $noCount;
 
-    {{-- Score by Category --}}
-    <div class="border border-gray-100 rounded-xl bg-white overflow-hidden">
-        <div class="px-5 py-3 border-b border-gray-100">
-            <h2 class="text-sm font-semibold text-gray-900">Score by Category</h2>
-        </div>
-        <div class="p-5 space-y-4">
-            @php
-                $sectionLabels = ['ux' => 'UX', 'content' => 'Content'];
-                $lastSection = null;
-            @endphp
-            @foreach($categoryScores as $key => $cat)
-                @if($cat['section'] !== $lastSection)
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider {{ $loop->first ? '' : 'mt-6 pt-4 border-t border-gray-100' }}">
-                        {{ $sectionLabels[$cat['section']] ?? $cat['section'] }} Audit
-                    </p>
-                    @php $lastSection = $cat['section']; @endphp
-                @endif
-                @if($cat['total'] > 0)
+            if ($catPct === null) {
+                $headerBg  = 'bg-gray-50 border-gray-100';
+                $barColor  = 'bg-gray-300';
+                $textColor = 'text-gray-400';
+                $pctLabel  = ($cat['all_na'] ?? false) ? 'N/A' : '—';
+            } elseif ($catPct >= 80) {
+                $headerBg  = 'bg-green-50 border-green-100';
+                $barColor  = 'bg-green-500';
+                $textColor = 'text-green-600';
+                $pctLabel  = $catPct . '%';
+            } elseif ($catPct >= 60) {
+                $headerBg  = 'bg-amber-50 border-amber-100';
+                $barColor  = 'bg-amber-400';
+                $textColor = 'text-amber-600';
+                $pctLabel  = $catPct . '%';
+            } else {
+                $headerBg  = 'bg-red-50 border-red-100';
+                $barColor  = 'bg-red-500';
+                $textColor = 'text-red-600';
+                $pctLabel  = $catPct . '%';
+            }
+            $sectionLabel = $sectionLabels[$catData['section']] ?? ucfirst($catData['section']);
+        @endphp
+
+        @if($lastSectionLabel !== $sectionLabel)
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider {{ $loop->first ? 'mt-2' : 'mt-6' }}">{{ $sectionLabel }}</p>
+            @php $lastSectionLabel = $sectionLabel; @endphp
+        @endif
+
+        <div x-data="{ open: {{ $issueCount > 0 ? 'true' : 'false' }} }" class="border border-gray-100 rounded-xl bg-white overflow-hidden">
+
+            {{-- Accordion Header --}}
+            <button type="button" @click="open = !open"
+                class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex-shrink-0">
+                        @if($failCount > 0)
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold">{{ $failCount }}</span>
+                        @elseif($noCount > 0)
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400 text-white text-xs font-bold">{{ $noCount }}</span>
+                        @else
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </span>
+                        @endif
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-900">{{ $catData['category'] }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            @if($catPct !== null)
+                                {{ $yesCount }} passed
+                                @if($failCount > 0) · <span class="text-red-500">{{ $failCount }} critical</span>@endif
+                                @if($noCount > 0) · <span class="text-amber-600">{{ $noCount }} issues</span>@endif
+                            @else
+                                {{ $pctLabel }}
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 flex-shrink-0 ml-4">
+                    @if($catPct !== null)
+                        <div class="hidden sm:flex items-center gap-2">
+                            <div class="w-24 bg-gray-100 rounded-full h-1.5">
+                                <div class="h-1.5 rounded-full {{ $barColor }}" style="width: {{ $catPct }}%"></div>
+                            </div>
+                            <span class="text-xs font-semibold {{ $textColor }} w-8 text-right">{{ $pctLabel }}</span>
+                        </div>
+                    @endif
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-gray-400 transition-transform duration-200 flex-shrink-0"
+                        :class="open ? 'rotate-180' : ''">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+            </button>
+
+            {{-- Accordion Body --}}
+            <div x-show="open"
+                x-transition:enter="transition-all duration-200 ease-out"
+                x-transition:enter-start="opacity-0 -translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition-all duration-150 ease-in"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-1"
+                class="border-t border-gray-100 divide-y divide-gray-50">
+                @foreach($catItems as $item)
                     @php
-                        $catPct = $cat['score'] ?? 0;
-                        $barColor = $catPct >= 80 ? 'bg-green-500' : ($catPct >= 60 ? 'bg-amber-400' : 'bg-red-500');
-                        $textColor = $catPct >= 80 ? 'text-green-600' : ($catPct >= 60 ? 'text-amber-600' : 'text-red-600');
+                        $r = $item['response'];
+                        if ($r === 'yes') {
+                            $dot = 'bg-green-500'; $labelColor = 'text-green-700'; $label = 'Pass';
+                        } elseif ($r === 'fail') {
+                            $dot = 'bg-red-500'; $labelColor = 'text-red-600'; $label = 'Critical';
+                        } elseif ($r === 'no') {
+                            $dot = 'bg-amber-400'; $labelColor = 'text-amber-600'; $label = 'Issue';
+                        } else {
+                            $dot = 'bg-gray-300'; $labelColor = 'text-gray-400'; $label = 'N/A';
+                        }
                     @endphp
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-xs text-gray-700">{{ $cat['category'] }}</span>
-                            <span class="text-xs font-semibold {{ $textColor }}">
-                                {{ $catPct }}%
-                                <span class="font-normal text-gray-400 ml-1">{{ $cat['pass'] }} passed · {{ $cat['total'] - $cat['pass'] }} issues</span>
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-1.5">
-                            <div class="h-1.5 rounded-full {{ $barColor }} transition-all" style="width: {{ $catPct }}%"></div>
+                    <div class="px-5 py-4">
+                        <div class="flex items-start gap-3">
+                            <span class="flex-shrink-0 mt-1 w-2 h-2 rounded-full {{ $dot }}"></span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="text-sm text-gray-800 font-medium leading-snug">{{ $item['text'] }}</p>
+                                    <span class="text-xs {{ $labelColor }} font-semibold flex-shrink-0">{{ $label }}</span>
+                                </div>
+                                @if($item['reason'])
+                                    <p class="text-sm text-gray-500 mt-1.5 leading-relaxed">{{ $item['reason'] }}</p>
+                                @endif
+                                @if($item['fix_instruction'])
+                                    <div class="mt-2 {{ $r === 'fail' ? 'bg-red-50 border-red-100' : 'bg-amber-50 border-amber-100' }} border rounded-lg px-3 py-2">
+                                        <p class="text-xs font-semibold {{ $r === 'fail' ? 'text-red-600' : 'text-amber-700' }} mb-0.5">How to fix</p>
+                                        <p class="text-sm {{ $r === 'fail' ? 'text-red-800' : 'text-amber-900' }}">{{ $item['fix_instruction'] }}</p>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
-                @else
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">{{ $cat['category'] }}</span>
-                        <span class="text-xs text-gray-400">{{ ($cat['all_na'] ?? false) ? 'N/A for this product type' : 'Not scored' }}</span>
-                    </div>
-                @endif
-            @endforeach
+                @endforeach
+            </div>
         </div>
-    </div>
+    @endforeach
 
     {{-- Footer links --}}
     <div class="flex items-center justify-between no-print">
