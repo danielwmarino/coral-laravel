@@ -180,28 +180,43 @@ class AuditChecklist extends Component
         }
 
         $prompt = <<<PROMPT
-You are a professional UX and content auditor. You have been given content scraped from a website and a list of audit criteria. Score each criterion based solely on what you can observe from the provided content.
+You are a professional UX and content auditor. Analyse the scraped website content below and score every single criterion listed. You MUST return a score for all {count(array_merge(...array_values(AuditChecklistService::uxItems()))) + count(array_merge(...array_values(AuditChecklistService::contentItems())))} items — do not skip any.
 
 WEBSITE: {$this->audit->product_url}
+PRODUCT TYPE: {$this->audit->product_type}
 
 SCRAPED CONTENT:
 {$pageContent}
 
 ---
 
-AUDIT CRITERIA (one per line, format: section.key: description):
+SCORING RULES:
+- "yes"  = criterion is clearly met based on the content
+- "no"   = criterion is not met but is fixable (moderate issue)
+- "fail" = critical failure requiring immediate attention (use for the worst 10–15% of issues)
+- "na"   = genuinely not applicable for this product type (use sparingly — only when the criterion literally cannot apply)
+
+For accessibility/forms/mobile criteria: infer from HTML evidence — look for <form>, <label>, alt="" attributes, aria-* attributes, <meta name="viewport">, responsive CSS classes, etc. Do NOT mark these "na" just because you cannot see the rendered output.
+
+---
+
+AUDIT CRITERIA:
 {$itemLines}
 
 ---
 
-INSTRUCTIONS:
-Return ONLY a valid JSON object. Keys are the criterion identifiers (e.g. "ux.first_value_prop"), values are one of: "yes", "no", "fail", "na".
-- "yes" = criterion is clearly met
-- "no" = criterion is not met
-- "fail" = criterion is critically failing (use sparingly for the worst issues)
-- "na" = not applicable based on the site type or content available
+Return ONLY a valid JSON object where every key is a criterion ID and every value is an object with:
+- "r": the score ("yes", "no", "fail", or "na")
+- "why": 1–2 sentence explanation of your assessment based on specific evidence from the content
+- "fix": specific actionable instruction for how to fix it (required for "no" and "fail"; null for "yes" and "na")
 
-Do not include any explanation, markdown, or text outside the JSON object.
+Example format:
+{
+  "ux.first_value_prop": {"r":"yes","why":"The homepage headline clearly states the service within the first viewport.","fix":null},
+  "ux.forms_labels": {"r":"fail","why":"The contact form uses placeholder text only — no visible <label> elements found in the HTML.","fix":"Add visible <label> elements above each form field. Labels must remain visible when the field is focused or filled."}
+}
+
+No markdown, no explanation outside the JSON.
 PROMPT;
 
         set_time_limit(120);
@@ -229,15 +244,27 @@ PROMPT;
             foreach ($allSections as $section => $categories) {
                 foreach ($categories as $category => $items) {
                     foreach ($items as $item) {
-                        $aiKey   = $section . '.' . $item['key'];
-                        $response = $scores[$aiKey] ?? null;
+                        $aiKey  = $section . '.' . $item['key'];
+                        $entry  = $scores[$aiKey] ?? null;
+
+                        // Support both old (string) and new (object) format
+                        if (is_array($entry)) {
+                            $response = $entry['r'] ?? null;
+                            $reason   = $entry['why'] ?? null;
+                            $fix      = $entry['fix'] ?? null;
+                        } else {
+                            $response = is_string($entry) ? $entry : null;
+                            $reason   = null;
+                            $fix      = null;
+                        }
+
                         if (!in_array($response, ['yes', 'no', 'fail', 'na'])) continue;
 
                         $this->responses[$aiKey] = $response;
 
                         AuditResponse::updateOrCreate(
                             ['audit_id' => $this->audit->id, 'section' => $section, 'item_key' => $item['key']],
-                            ['category' => $category, 'response' => $response]
+                            ['category' => $category, 'response' => $response, 'reason' => $reason, 'fix_instruction' => $fix]
                         );
                     }
                 }

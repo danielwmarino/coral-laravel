@@ -35,7 +35,11 @@ class AuditReport extends Component
         $this->audit = $audit;
 
         foreach ($audit->responses as $r) {
-            $this->responses[$r->section . '.' . $r->item_key] = $r->response;
+            $this->responses[$r->section . '.' . $r->item_key] = [
+                'response'        => $r->response,
+                'reason'          => $r->reason,
+                'fix_instruction' => $r->fix_instruction,
+            ];
         }
 
         $this->uxItems      = AuditChecklistService::uxItems();
@@ -48,19 +52,16 @@ class AuditReport extends Component
     {
         $scores = [];
 
-        $sections = [
-            'ux'      => $this->uxItems,
-            'content' => $this->contentItems,
-        ];
+        $sections = ['ux' => $this->uxItems, 'content' => $this->contentItems];
 
         foreach ($sections as $sectionName => $categories) {
             foreach ($categories as $categoryName => $items) {
-                $yes    = 0;
-                $total  = 0;
-                $fails  = 0;
+                $yes = $total = $fails = $na = 0;
 
                 foreach ($items as $item) {
-                    $response = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $entry    = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $response = is_array($entry) ? ($entry['response'] ?? null) : $entry;
+                    if ($response === 'na') { $na++; continue; }
                     if (in_array($response, ['yes', 'no', 'fail'])) {
                         $total++;
                         if ($response === 'yes')  $yes++;
@@ -75,6 +76,7 @@ class AuditReport extends Component
                     'pass'     => $yes,
                     'total'    => $total,
                     'fails'    => $fails,
+                    'all_na'   => $na > 0 && $total === 0,
                 ];
             }
         }
@@ -85,22 +87,21 @@ class AuditReport extends Component
     public function getFailedItems(): array
     {
         $failed = [];
-
-        $sections = [
-            'ux'      => $this->uxItems,
-            'content' => $this->contentItems,
-        ];
+        $sections = ['ux' => $this->uxItems, 'content' => $this->contentItems];
 
         foreach ($sections as $sectionName => $categories) {
             foreach ($categories as $categoryName => $items) {
                 foreach ($items as $item) {
-                    $response = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $entry    = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $response = is_array($entry) ? ($entry['response'] ?? null) : $entry;
                     if ($response === 'fail') {
                         $failed[] = [
-                            'section'  => $sectionName,
-                            'category' => $categoryName,
-                            'text'     => $item['text'],
-                            'key'      => $item['key'],
+                            'section'         => $sectionName,
+                            'category'        => $categoryName,
+                            'text'            => $item['text'],
+                            'key'             => $item['key'],
+                            'reason'          => is_array($entry) ? ($entry['reason'] ?? null) : null,
+                            'fix_instruction' => is_array($entry) ? ($entry['fix_instruction'] ?? null) : null,
                         ];
                     }
                 }
@@ -113,22 +114,21 @@ class AuditReport extends Component
     public function getNoItems(): array
     {
         $nos = [];
-
-        $sections = [
-            'ux'      => $this->uxItems,
-            'content' => $this->contentItems,
-        ];
+        $sections = ['ux' => $this->uxItems, 'content' => $this->contentItems];
 
         foreach ($sections as $sectionName => $categories) {
             foreach ($categories as $categoryName => $items) {
                 foreach ($items as $item) {
-                    $response = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $entry    = $this->responses[$sectionName . '.' . $item['key']] ?? null;
+                    $response = is_array($entry) ? ($entry['response'] ?? null) : $entry;
                     if ($response === 'no') {
                         $nos[] = [
-                            'section'  => $sectionName,
-                            'category' => $categoryName,
-                            'text'     => $item['text'],
-                            'key'      => $item['key'],
+                            'section'         => $sectionName,
+                            'category'        => $categoryName,
+                            'text'            => $item['text'],
+                            'key'             => $item['key'],
+                            'reason'          => is_array($entry) ? ($entry['reason'] ?? null) : null,
+                            'fix_instruction' => is_array($entry) ? ($entry['fix_instruction'] ?? null) : null,
                         ];
                     }
                 }
@@ -143,7 +143,13 @@ class AuditReport extends Component
         $failedItems = $this->getFailedItems();
         $noItems     = $this->getNoItems();
 
-        return view('livewire.audit-report', compact('failedItems', 'noItems'));
+        $responseCounts = [
+            'fail' => collect($this->responses)->filter(fn($e) => (is_array($e) ? $e['response'] : $e) === 'fail')->count(),
+            'no'   => collect($this->responses)->filter(fn($e) => (is_array($e) ? $e['response'] : $e) === 'no')->count(),
+            'yes'  => collect($this->responses)->filter(fn($e) => (is_array($e) ? $e['response'] : $e) === 'yes')->count(),
+        ];
+
+        return view('livewire.audit-report', compact('failedItems', 'noItems', 'responseCounts'));
     }
 
     private function resolveClient(): ?Client

@@ -16,6 +16,8 @@ class AuditResponse extends Model
         'category',
         'item_key',
         'response',
+        'reason',
+        'fix_instruction',
     ];
 
     public function audit(): BelongsTo

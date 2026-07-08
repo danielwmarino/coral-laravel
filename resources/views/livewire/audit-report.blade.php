@@ -143,9 +143,9 @@
 
     {{-- Issue Breakdown --}}
     @php
-        $failCount = collect($responses)->filter(fn($r) => $r === 'fail')->count();
-        $noCount   = collect($responses)->filter(fn($r) => $r === 'no')->count();
-        $yesCount  = collect($responses)->filter(fn($r) => $r === 'yes')->count();
+        $failCount = $responseCounts['fail'];
+        $noCount   = $responseCounts['no'];
+        $yesCount  = $responseCounts['yes'];
     @endphp
     <div class="grid grid-cols-3 gap-4">
         <div class="border border-red-100 rounded-xl p-4 bg-red-50 text-center">
@@ -168,22 +168,32 @@
     {{-- Priority Actions (Fails) --}}
     @if(count($failedItems) > 0)
         <div class="border border-red-100 rounded-xl bg-white overflow-hidden">
-            <div class="px-5 py-3 bg-red-50 border-b border-red-100">
+            <div class="px-5 py-4 bg-red-50 border-b border-red-100">
                 <h2 class="text-sm font-semibold text-red-700 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    Priority Actions — Critical Issues ({{ count($failedItems) }})
+                    Critical Issues — Fix Immediately ({{ count($failedItems) }})
                 </h2>
-                <p class="text-xs text-red-500 mt-0.5">These items were flagged as critical failures and need immediate attention.</p>
             </div>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-red-50">
                 @foreach($failedItems as $item)
-                    <div class="px-5 py-3 flex items-start gap-3">
-                        <span class="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </span>
-                        <div>
-                            <p class="text-sm text-gray-800">{{ $item['text'] }}</p>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
+                    <div class="px-5 py-4">
+                        <div class="flex items-start gap-3">
+                            <span class="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">{{ $item['text'] }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
+                                @if($item['reason'])
+                                    <p class="text-sm text-red-700 mt-2">{{ $item['reason'] }}</p>
+                                @endif
+                                @if($item['fix_instruction'])
+                                    <div class="mt-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                                        <p class="text-xs font-semibold text-red-600 mb-0.5">How to fix</p>
+                                        <p class="text-sm text-red-800">{{ $item['fix_instruction'] }}</p>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -191,22 +201,32 @@
         </div>
     @endif
 
-    {{-- Items Marked No --}}
+    {{-- Issues to Address --}}
     @if(count($noItems) > 0)
         <div class="border border-orange-100 rounded-xl bg-white overflow-hidden">
-            <div class="px-5 py-3 bg-orange-50 border-b border-orange-100">
+            <div class="px-5 py-4 bg-orange-50 border-b border-orange-100">
                 <h2 class="text-sm font-semibold text-orange-700">Issues to Address ({{ count($noItems) }})</h2>
-                <p class="text-xs text-orange-500 mt-0.5">These items are not currently in place and should be addressed.</p>
             </div>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-orange-50">
                 @foreach($noItems as $item)
-                    <div class="px-5 py-3 flex items-start gap-3">
-                        <span class="flex-shrink-0 mt-0.5 w-4 h-4 rounded-full bg-orange-400 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </span>
-                        <div>
-                            <p class="text-sm text-gray-800">{{ $item['text'] }}</p>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
+                    <div class="px-5 py-4">
+                        <div class="flex items-start gap-3">
+                            <span class="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-orange-400 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">{{ $item['text'] }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ ucfirst($item['section']) }} › {{ $item['category'] }}</p>
+                                @if($item['reason'])
+                                    <p class="text-sm text-gray-600 mt-2">{{ $item['reason'] }}</p>
+                                @endif
+                                @if($item['fix_instruction'])
+                                    <div class="mt-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                        <p class="text-xs font-semibold text-amber-700 mb-0.5">How to fix</p>
+                                        <p class="text-sm text-amber-900">{{ $item['fix_instruction'] }}</p>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -248,8 +268,8 @@
                     </div>
                 @else
                     <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-400">{{ $cat['category'] }}</span>
-                        <span class="text-xs text-gray-400">Not scored</span>
+                        <span class="text-xs text-gray-500">{{ $cat['category'] }}</span>
+                        <span class="text-xs text-gray-400">{{ ($cat['all_na'] ?? false) ? 'N/A for this product type' : 'Not scored' }}</span>
                     </div>
                 @endif
             @endforeach

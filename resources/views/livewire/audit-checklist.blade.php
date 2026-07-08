@@ -72,12 +72,66 @@
         </div>
     @endif
 
-    @if($this->aiRunning)
-        <div class="bg-pink-50 border border-pink-100 rounded-xl px-4 py-4 text-sm text-pink-800 flex items-center gap-3">
-            <svg class="animate-spin flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-            <span>AI is crawling the site and scoring all {{ count(array_merge(...array_values(\App\Services\AuditChecklist::uxItems()))) + count(array_merge(...array_values(\App\Services\AuditChecklist::contentItems()))) }} criteria — this takes about 30–60 seconds…</span>
-        </div>
-    @endif
+    {{-- AI Mode: show status screen only, no checklist --}}
+    @if($this->audit->audit_mode === 'ai_assisted')
+
+        @if($this->aiRunning)
+            {{-- Running state --}}
+            <div class="border border-pink-100 rounded-xl bg-white p-10 text-center">
+                <div class="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-900 mb-2">AI Audit in Progress</h2>
+                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Crawling the site and scoring all 98 criteria across UX and content. This takes about 30–60 seconds.</p>
+                <div class="w-full max-w-xs mx-auto bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div class="h-2 rounded-full bg-[#FC54AA] animate-pulse" style="width: 70%"></div>
+                </div>
+            </div>
+
+        @elseif($this->audit->status === 'completed')
+            {{-- Completed state --}}
+            <div class="border border-green-100 rounded-xl bg-white p-10 text-center">
+                <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-900 mb-2">AI Audit Complete</h2>
+                <p class="text-sm text-gray-500 mb-6">All criteria have been scored. View the full report below.</p>
+                <div class="flex items-center justify-center gap-3">
+                    <a href="{{ route('audits.report', $this->audit->id) }}"
+                        class="flex items-center gap-2 px-5 py-2.5 text-sm bg-[#003470] text-white rounded-lg hover:bg-[#002555] transition-colors font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        View Report
+                    </a>
+                    @if($this->audit->product_url)
+                        <button wire:click="runAiAudit"
+                            class="flex items-center gap-2 px-4 py-2.5 text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                            Re-run AI Audit
+                        </button>
+                    @endif
+                </div>
+                @if($this->audit->overall_score !== null)
+                    <p class="text-xs text-gray-400 mt-5">Overall score: <strong class="text-gray-700">{{ $this->audit->overall_score }}%</strong> · UX: <strong class="text-gray-700">{{ $this->audit->ux_score }}%</strong> · Content: <strong class="text-gray-700">{{ $this->audit->content_score }}%</strong></p>
+                @endif
+            </div>
+
+        @else
+            {{-- Ready to run state --}}
+            <div class="border border-gray-100 rounded-xl bg-white p-10 text-center">
+                <div class="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                </div>
+                <h2 class="text-base font-semibold text-gray-900 mb-2">Ready to Analyse</h2>
+                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">The AI will crawl <strong>{{ $this->audit->product_url }}</strong>, score all 98 UX and content criteria, and generate a full report automatically.</p>
+                <button wire:click="runAiAudit"
+                    class="inline-flex items-center gap-2 px-6 py-3 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                    Run AI Audit
+                </button>
+            </div>
+        @endif
+
+    @else
+    {{-- Manual mode: show full checklist --}}
 
     {{-- Progress bar --}}
     @php
@@ -226,5 +280,6 @@
         </button>
     </div>
 
-    @endif
+    @endif {{-- end manual mode --}}
+    @endif {{-- end audit exists --}}
 </div>
