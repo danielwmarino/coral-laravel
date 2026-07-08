@@ -38,7 +38,7 @@
     {{-- ── SUMMARY TAB ── --}}
     @if($activeTab === 'summary')
         <div class="space-y-4">
-            <div class="flex items-start justify-between">
+            <div class="flex items-end justify-between">
                 <div>
                     <h2 class="text-base font-semibold text-gray-900">Client Brief</h2>
                     <p class="text-sm text-gray-500 mt-0.5">Who the client is — injected as background context into every Agent conversation. Separate from the performance summary on the Dashboard.</p>
