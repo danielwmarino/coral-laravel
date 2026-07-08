@@ -72,7 +72,7 @@
         @if(empty($messages))
             <div class="flex flex-col items-center justify-center h-full text-center gap-3 pb-20">
                 <div class="w-12 h-12 rounded-full bg-[#FCE4F1] flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FC54AA]"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
                 </div>
                 <p class="text-sm font-medium text-gray-700">Ask your marketing strategist</p>
                 <p class="text-xs text-gray-400 max-w-xs">Get AI-powered advice on your strategy, goals, campaigns, and marketing performance.</p>
