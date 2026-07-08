@@ -265,7 +265,10 @@
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <span class="text-xs text-gray-700">{{ $cat['category'] }}</span>
-                            <span class="text-xs font-semibold {{ $textColor }}">{{ $catPct }}% ({{ $cat['pass'] }}/{{ $cat['total'] }})</span>
+                            <span class="text-xs font-semibold {{ $textColor }}">
+                                {{ $catPct }}%
+                                <span class="font-normal text-gray-400 ml-1">{{ $cat['pass'] }} passed · {{ $cat['total'] - $cat['pass'] }} issues</span>
+                            </span>
                         </div>
                         <div class="w-full bg-gray-100 rounded-full h-1.5">
                             <div class="h-1.5 rounded-full {{ $barColor }} transition-all" style="width: {{ $catPct }}%"></div>
