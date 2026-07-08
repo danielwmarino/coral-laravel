@@ -18,6 +18,7 @@ class StrategistMessageEditor extends Component
         $this->message = $client->strategist_message ?? '';
     }
 
+    #[\Livewire\Attributes\On('start-editing-message')]
     public function startEditing(): void
     {
         if (!auth()->user()->isAgency()) return;

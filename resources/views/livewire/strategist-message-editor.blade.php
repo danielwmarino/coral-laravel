@@ -54,20 +54,10 @@
             </div>
         </div>
     @else
-        <button
-            wire:click="startEditing"
-            class="text-xs font-medium text-[#FC54AA] hover:text-[#E0429A] transition-colors flex items-center gap-1"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit
-        </button>
-
-        <div class="mt-2">
-            @if($client->strategist_message)
-                <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
-            @else
-                <p class="text-sm text-gray-300 italic">No message written yet. Click Edit to add one.</p>
-            @endif
-        </div>
+        @if($client->strategist_message)
+            <div class="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none">{!! $client->strategist_message !!}</div>
+        @else
+            <p class="text-sm text-gray-300 italic">No message written yet. Click Edit to add one.</p>
+        @endif
     @endif
 </div>
