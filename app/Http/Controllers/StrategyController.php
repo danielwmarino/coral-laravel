@@ -6,10 +6,6 @@ use App\Models\Strategy;
 
 class StrategyController extends Controller
 {
-    private const BLACK = 'FF000000';
-    private const WHITE = 'FFFFFFFF';
-    private const GRAY  = 'FF666666';
-
     public function downloadSlides(string $id)
     {
         $strategy = Strategy::findOrFail($id);

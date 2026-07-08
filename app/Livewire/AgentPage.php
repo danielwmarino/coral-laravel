@@ -4,6 +4,9 @@ namespace App\Livewire;
 
 use App\Models\AgentConversation;
 use App\Models\Client;
+use App\Models\Goal;
+use App\Models\KnowledgeChunk;
+use App\Models\Strategy;
 use Illuminate\Support\Facades\Session;
 use Livewire\Component;
 
@@ -13,6 +16,7 @@ class AgentPage extends Component
     public string $input = '';
     public array $messages = [];
     public bool $thinking = false;
+    #[\Livewire\Attributes\Locked]
     public ?string $conversationId = null;
     public bool $historyOpen = false;
 
@@ -81,8 +85,8 @@ class AgentPage extends Component
         $this->thinking = true;
 
         // Build context
-        $goals = \App\Models\Goal::where('client_id', $this->client->id)->where('archived', false)->get();
-        $strategy = \App\Models\Strategy::where('client_id', $this->client->id)->where('status', 'approved')->latest()->first();
+        $goals = Goal::where('client_id', $this->client->id)->where('archived', false)->get();
+        $strategy = Strategy::where('client_id', $this->client->id)->where('status', 'approved')->latest()->first();
 
         $system = "You are a digital marketing strategist assistant for {$this->client->name}. "
             . "Be concise, actionable, and specific. Use markdown for formatting.\n\n";
@@ -100,7 +104,7 @@ class AgentPage extends Component
         }
 
         // Inject up to 10 knowledge chunks (documents + website)
-        $chunks = \App\Models\KnowledgeChunk::where('client_id', $this->client->id)
+        $chunks = KnowledgeChunk::where('client_id', $this->client->id)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();

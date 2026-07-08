@@ -16,9 +16,6 @@ class StrategyPage extends Component
     public string $docText = '';
     public string $reviewNotes = '';
     public bool $editing = false;
-    public bool $saving = false;
-    public bool $reviewing = false;
-    public bool $copied = false;
 
     // Delete confirm
     public ?string $deleteTargetId = null;
@@ -39,8 +36,9 @@ class StrategyPage extends Component
             $this->client = $clientId ? Client::find($clientId) : null;
         }
 
+        $this->selectedId = null;
         $strategies = $this->strategies();
-        if ($strategies->isNotEmpty() && !$this->selectedId) {
+        if ($strategies->isNotEmpty()) {
             $first = $strategies->first();
             $this->selectedId = $first->id;
             $this->docText = $first->generated_document ?? '';
@@ -56,9 +54,17 @@ class StrategyPage extends Component
             ->get();
     }
 
+    private function scopedStrategy(string $id): ?Strategy
+    {
+        if (!$this->client) return null;
+        return Strategy::where('id', $id)
+            ->where('client_id', $this->client->id)
+            ->first();
+    }
+
     public function selectStrategy(string $id): void
     {
-        $strategy = Strategy::find($id);
+        $strategy = $this->scopedStrategy($id);
         if (!$strategy) return;
         $this->selectedId = $id;
         $this->docText = $strategy->generated_document ?? '';
@@ -68,7 +74,7 @@ class StrategyPage extends Component
 
     public function saveDocument(): void
     {
-        $strategy = Strategy::find($this->selectedId);
+        $strategy = $this->scopedStrategy($this->selectedId ?? '');
         if (!$strategy) return;
 
         $updates = ['generated_document' => $this->docText];
@@ -87,7 +93,8 @@ class StrategyPage extends Component
 
     public function approve(): void
     {
-        $strategy = Strategy::find($this->selectedId);
+        abort_unless(auth()->user()->isAgency(), 403);
+        $strategy = $this->scopedStrategy($this->selectedId ?? '');
         if (!$strategy) return;
         $strategy->update([
             'status' => 'approved',
@@ -99,11 +106,12 @@ class StrategyPage extends Component
 
     public function requestChanges(): void
     {
+        abort_unless(auth()->user()->isAgency(), 403);
         if (!trim($this->reviewNotes)) {
             session()->flash('error', 'Add review notes before requesting changes');
             return;
         }
-        $strategy = Strategy::find($this->selectedId);
+        $strategy = $this->scopedStrategy($this->selectedId ?? '');
         if (!$strategy) return;
         $strategy->update(['status' => 'changes_requested', 'review_notes' => $this->reviewNotes]);
         session()->flash('toast', 'Changes requested');
@@ -111,13 +119,13 @@ class StrategyPage extends Component
 
     public function archiveStrategy(string $id): void
     {
-        Strategy::find($id)?->update(['archived' => true]);
+        $this->scopedStrategy($id)?->update(['archived' => true]);
         session()->flash('toast', 'Strategy archived');
     }
 
     public function unarchiveStrategy(string $id): void
     {
-        Strategy::find($id)?->update(['archived' => false]);
+        $this->scopedStrategy($id)?->update(['archived' => false]);
         session()->flash('toast', 'Strategy restored');
     }
 
@@ -130,7 +138,7 @@ class StrategyPage extends Component
     {
         if (!$this->deleteTargetId) return;
         $this->deleting = true;
-        $strategy = Strategy::find($this->deleteTargetId);
+        $strategy = $this->scopedStrategy($this->deleteTargetId);
         if ($strategy) {
             if ($this->selectedId === $strategy->id) {
                 $this->selectedId = null;
@@ -146,7 +154,7 @@ class StrategyPage extends Component
     public function render(): \Illuminate\View\View
     {
         $strategies = $this->strategies();
-        $selected = $this->selectedId ? Strategy::find($this->selectedId) : null;
+        $selected = $this->selectedId ? $this->scopedStrategy($this->selectedId) : null;
         $active = $strategies->where('archived', false)->values();
         $archived = $strategies->where('archived', true)->values();
         $isAgency = auth()->user()->isAgency();

@@ -45,7 +45,7 @@ class Goal extends Model
 
     public function progressPercent(): float
     {
-        if (!$this->target_value || $this->target_value == 0) {
+        if (!$this->target_value) {
             return 0;
         }
         return min(100, round(($this->current_value / $this->target_value) * 100, 1));

@@ -8,6 +8,7 @@ use Livewire\Component;
 
 class GoalDetail extends Component
 {
+    #[\Livewire\Attributes\Locked]
     public string $goalId;
     public ?Goal $goal = null;
 
@@ -30,7 +31,16 @@ class GoalDetail extends Component
     {
         $this->goalId = $goalId;
         $this->goal = Goal::with('tasks')->find($goalId);
-        if ($this->goal) $this->fillEdit();
+
+        if ($this->goal) {
+            $user = auth()->user();
+            $clientId = $user->isClientUser()
+                ? $user->profile?->client?->id
+                : \Illuminate\Support\Facades\Session::get('active_client_id');
+
+            abort_if($this->goal->client_id !== $clientId, 403);
+            $this->fillEdit();
+        }
     }
 
     private function fillEdit(): void

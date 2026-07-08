@@ -144,7 +144,16 @@ class DatasetPage extends Component
 
     public function uploadDocument(): void
     {
-        if (!$this->client || !$this->documentFile) return;
+        $this->documentError = '';
+
+        if (!$this->client) {
+            $this->documentError = 'No client selected. Please select a client first.';
+            return;
+        }
+        if (!$this->documentFile) {
+            $this->documentError = 'Please select a file first. If a file was selected but this error persists, the upload may have failed — try again.';
+            return;
+        }
 
         $this->validate([
             'documentFile' => 'required|file|mimes:pdf,txt,doc,docx|max:10240',
@@ -156,15 +165,25 @@ class DatasetPage extends Component
 
         try {
             $path = $this->documentFile->getRealPath();
+            if (!$path || !file_exists($path)) {
+                $this->documentError = 'Upload failed — temporary file not found. Please try again.';
+                $this->uploadingDocument = false;
+                return;
+            }
             $ext = strtolower($this->documentFile->getClientOriginalExtension());
 
             if ($ext === 'txt') {
                 $text = file_get_contents($path);
             } elseif ($ext === 'pdf') {
-                // Basic PDF text extraction — read raw and strip binary
-                $text = shell_exec("strings " . escapeshellarg($path) . " | grep -v '^[^a-zA-Z]*$' | head -500") ?? '';
+                try {
+                    $parser = new \Smalot\PdfParser\Parser();
+                    $pdf    = $parser->parseFile($path);
+                    $text   = $pdf->getText();
+                } catch (\Exception) {
+                    $text = '';
+                }
                 if (empty(trim($text))) {
-                    $text = '[PDF content — text extraction requires pdftotext]';
+                    $text = '[PDF content could not be extracted — try uploading a text-based PDF]';
                 }
             } else {
                 // docx/doc — read as zip and extract word/document.xml
@@ -388,8 +407,9 @@ class DatasetPage extends Component
 
     public function disconnectPlatform(string $id): void
     {
+        if (!$this->client) return;
         \App\Models\AnalyticsConnection::where('id', $id)
-            ->where('client_id', $this->client?->id)
+            ->where('client_id', $this->client->id)
             ->delete();
         session()->flash('toast', 'Disconnected');
     }

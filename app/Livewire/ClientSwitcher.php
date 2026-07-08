@@ -28,9 +28,10 @@ class ClientSwitcher extends Component
         } else {
             // Agency staff — restore from session or default to first client
             $sessionId = Session::get('active_client_id');
-            if ($sessionId && Client::find($sessionId)) {
+            $sessionClient = $sessionId ? Client::find($sessionId) : null;
+            if ($sessionClient) {
                 $this->selectedClientId = $sessionId;
-                $this->selectedClientName = Client::find($sessionId)->name;
+                $this->selectedClientName = $sessionClient->name;
             } else {
                 $first = Client::orderBy('name')->first();
                 if ($first) {

@@ -7,7 +7,6 @@
     <div class="detail-box">
         <p><strong>Login email:</strong> {{ $user->email }}</p>
         <p><strong>Temporary password:</strong> {{ $temporaryPassword }}</p>
-        <p style="margin-top:10px; font-size:13px; color:#6b7280;">You'll be prompted to change your password after your first login.</p>
     </div>
 
     <hr class="divider">

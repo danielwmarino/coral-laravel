@@ -70,9 +70,13 @@ class Dashboard extends Component
             $raw = preg_replace('/^```(?:json)?\s*/m', '', $raw);
             $raw = preg_replace('/\s*```\s*$/m', '', $raw);
             $decoded = json_decode(trim($raw), true);
-            $summary = ($decoded && isset($decoded['verdict'])) ? $raw : $raw;
+            if (!$decoded || !isset($decoded['verdict'])) {
+                session()->flash('message', 'AI returned an unexpected format. Please try again.');
+                $this->client->refresh();
+                return;
+            }
             $this->client->update([
-                'executive_summary' => $summary,
+                'executive_summary' => $raw,
                 'executive_summary_updated_at' => now(),
             ]);
             $this->client->refresh();

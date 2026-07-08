@@ -118,23 +118,16 @@
                 </div>
 
                 @if(!$generatedDoc)
-                    @if($polling)
-                        <div wire:poll.3s="checkGenerated" class="flex items-center justify-center gap-3 py-4 text-sm text-gray-500">
-                            <svg class="animate-spin text-[#FC54AA]" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                            Generating your strategy with AI… this may take up to 60 seconds
-                        </div>
-                    @else
-                        <button wire:click="generateStrategy" wire:loading.attr="disabled" class="w-full flex items-center justify-center gap-2 py-2.5 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60">
-                            <span wire:loading.remove wire:target="generateStrategy" class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                                Generate strategy with AI
-                            </span>
-                            <span wire:loading wire:target="generateStrategy" class="flex items-center gap-2">
-                                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                                Queuing…
-                            </span>
-                        </button>
-                    @endif
+                    <button wire:click="generateStrategy" wire:loading.attr="disabled" class="w-full flex items-center justify-center gap-2 py-2.5 text-sm bg-[#FC54AA] hover:bg-[#E0429A] text-white rounded-lg transition-colors disabled:opacity-60">
+                        <span wire:loading.remove wire:target="generateStrategy" class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            Generate strategy with AI
+                        </span>
+                        <span wire:loading wire:target="generateStrategy" class="flex items-center gap-2">
+                            <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            Generating… this may take up to 60 seconds
+                        </span>
+                    </button>
                 @else
                     <div class="border border-gray-100 rounded-lg p-4 bg-gray-50 max-h-80 overflow-y-auto">
                         <pre class="text-xs text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{{ $generatedDoc }}</pre>

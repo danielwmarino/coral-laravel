@@ -47,6 +47,11 @@ return [
             'report' => false,
         ],
 
+        'tmp' => [
+            'driver' => 'local',
+            'root' => sys_get_temp_dir() . '/livewire-tmp',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

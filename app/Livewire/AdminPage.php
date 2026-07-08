@@ -17,11 +17,10 @@ class AdminPage extends Component
     // Add Client
     public string $newClientName = '';
     public string $newClientSlug = '';
-    public bool $addingClient = false;
     public string $clientMessage = '';
     public string $clientError = '';
 
-    // Invite (display-only for now — no email infra)
+    // Invite
     public string $inviteEmail = '';
     public string $inviteName = '';
     public string $inviteRole = 'client_user';
@@ -34,6 +33,8 @@ class AdminPage extends Component
 
     public function addClient(): void
     {
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
+
         $this->validate([
             'newClientName' => 'required|string|max:255',
         ]);
@@ -62,6 +63,8 @@ class AdminPage extends Component
 
     public function updateUserRole(string $userId, string $role, ?string $clientId): void
     {
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
+
         $profile = UserProfile::where('user_id', $userId)->first();
         $wasUnassigned = !$profile || !$profile->role;
 
@@ -83,8 +86,10 @@ class AdminPage extends Component
 
     public function sendInvite(): void
     {
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
+
         $this->validate([
-            'inviteEmail'    => 'required|email',
+            'inviteEmail'    => 'required|email|unique:users,email',
             'inviteName'     => 'required|string|max:255',
             'inviteRole'     => 'required|in:client_user,agency_staff,super_admin',
             'inviteClientId' => 'nullable|exists:clients,id',
@@ -111,12 +116,13 @@ class AdminPage extends Component
             Mail::to($user->email)->send(new WelcomeMail($user));
         }
 
+        $sentTo = $this->inviteName;
         $this->inviteEmail = '';
         $this->inviteName = '';
         $this->inviteRole = 'client_user';
         $this->inviteClientId = '';
 
-        session()->flash('toast', 'Invite sent to ' . $this->inviteName);
+        session()->flash('toast', 'Invite sent to ' . $sentTo);
     }
 
     public function render(): \Illuminate\View\View
