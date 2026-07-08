@@ -39,9 +39,10 @@ class StrategistMessageEditor extends Component
     {
         if (!auth()->user()->isAgency()) return;
 
-        $clean = strip_tags($html, '<p><br><strong><em><u><ul><ol><li><h1><h2><h3><blockquote>');
-        $this->message = $clean;
+        $clean = strip_tags($html, '<p><br><div><span><strong><b><em><i><u><ul><ol><li><h1><h2><h3><blockquote>');
         $this->client->update(['strategist_message' => $clean]);
+        $this->client->refresh();
+        $this->message = $clean;
         $this->editing = false;
         session()->flash('message', 'Strategist message saved.');
     }
