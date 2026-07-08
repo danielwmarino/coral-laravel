@@ -9,24 +9,15 @@ use App\Models\KnowledgeChunk;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 class DatasetPage extends Component
 {
-    use WithFileUploads;
-
     public ?Client $client = null;
     public string $activeTab = 'summary';
 
     // Summary tab
     public bool $generatingSummary = false;
     public string $summaryError = '';
-
-    // Documents tab
-    public $documentFile = null;
-    public string $documentLabel = '';
-    public bool $uploadingDocument = false;
-    public string $documentError = '';
 
     // Website tab
     public string $websiteUrl = '';
@@ -53,6 +44,11 @@ class DatasetPage extends Component
         } else {
             $clientId = Session::get('active_client_id');
             $this->client = $clientId ? Client::find($clientId) : null;
+        }
+
+        // Restore active tab from query string (e.g. after upload redirect)
+        if (request()->query('tab')) {
+            $this->activeTab = request()->query('tab');
         }
 
         // Pre-fill website URL from meta
@@ -140,87 +136,6 @@ class DatasetPage extends Component
         }
 
         $this->generatingSummary = false;
-    }
-
-    public function uploadDocument(): void
-    {
-        $this->documentError = '';
-
-        if (!$this->client) {
-            $this->documentError = 'No client selected. Please select a client first.';
-            return;
-        }
-        if (!$this->documentFile) {
-            $this->documentError = 'Please select a file first. If a file was selected but this error persists, the upload may have failed — try again.';
-            return;
-        }
-
-        $this->validate([
-            'documentFile' => 'required|file|mimes:pdf,txt,doc,docx|max:10240',
-            'documentLabel' => 'required|string|max:255',
-        ]);
-
-        $this->uploadingDocument = true;
-        $this->documentError = '';
-
-        try {
-            $path = $this->documentFile->getRealPath();
-            if (!$path || !file_exists($path)) {
-                $this->documentError = 'Upload failed — temporary file not found. Please try again.';
-                $this->uploadingDocument = false;
-                return;
-            }
-            $ext = strtolower($this->documentFile->getClientOriginalExtension());
-
-            if ($ext === 'txt') {
-                $text = file_get_contents($path);
-            } elseif ($ext === 'pdf') {
-                try {
-                    $parser = new \Smalot\PdfParser\Parser();
-                    $pdf    = $parser->parseFile($path);
-                    $text   = $pdf->getText();
-                } catch (\Exception) {
-                    $text = '';
-                }
-                if (empty(trim($text))) {
-                    $text = '[PDF content could not be extracted — try uploading a text-based PDF]';
-                }
-            } else {
-                // docx/doc — read as zip and extract word/document.xml
-                $zip = new \ZipArchive();
-                if ($zip->open($path) === true) {
-                    $xml = $zip->getFromName('word/document.xml');
-                    $zip->close();
-                    $text = $xml ? strip_tags($xml) : '[Could not extract text from document]';
-                } else {
-                    $text = '[Could not open document]';
-                }
-            }
-
-            // Chunk into ~1000-char pieces
-            $chunks = $this->chunkText($text, 1000);
-            KnowledgeChunk::where('client_id', $this->client->id)
-                ->where('source_label', $this->documentLabel)
-                ->where('source_type', 'document')
-                ->delete();
-
-            foreach ($chunks as $chunk) {
-                KnowledgeChunk::create([
-                    'client_id'    => $this->client->id,
-                    'source_type'  => 'document',
-                    'source_label' => $this->documentLabel,
-                    'chunk_text'   => $chunk,
-                ]);
-            }
-
-            $this->documentFile = null;
-            $this->documentLabel = '';
-            session()->flash('toast', 'Document added to knowledge base (' . count($chunks) . ' chunks)');
-        } catch (\Exception $e) {
-            $this->documentError = 'Upload failed: ' . $e->getMessage();
-        }
-
-        $this->uploadingDocument = false;
     }
 
     public function deleteChunksByLabel(string $sourceType, string $label): void

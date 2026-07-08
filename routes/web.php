@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DocumentUploadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StrategyController;
 
@@ -25,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/recommendations', fn () => view('recommendations.index'))->name('recommendations');
     Route::get('/insights', fn () => view('insights.index'))->name('insights');
     Route::get('/dataset', fn () => view('dataset.index'))->name('dataset');
+    Route::post('/dataset/upload-document', [DocumentUploadController::class, 'store'])->name('dataset.upload-document')->middleware('role:super_admin,agency_staff');
 
     // Agency-only routes
     Route::get('/agent', fn () => view('agent.index'))->middleware('role:super_admin,agency_staff')->name('agent');

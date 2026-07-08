@@ -131,31 +131,32 @@
             @if($isAgency)
                 <div class="bg-white border border-gray-100 rounded-xl p-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-4">Upload Document</h3>
-                    <div class="space-y-3">
+                    <form action="{{ route('dataset.upload-document') }}" method="POST" enctype="multipart/form-data"
+                          x-data="{ uploading: false }" @submit="uploading = true" class="space-y-3">
+                        @csrf
+                        <input type="hidden" name="client_id" value="{{ $client?->id }}">
                         <div>
                             <label class="text-xs font-medium text-gray-700 mb-1 block">Document Label</label>
-                            <input wire:model="documentLabel" type="text" placeholder="e.g. Brand Guidelines, Q4 Report"
-                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA] @error('documentLabel') border-red-400 @enderror">
-                            @error('documentLabel') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                            <input name="document_label" type="text" placeholder="e.g. Brand Guidelines, Q4 Report"
+                                value="{{ old('document_label') }}"
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#FC54AA] {{ $errors->has('document_label') ? 'border-red-400' : '' }}">
+                            @error('document_label') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="text-xs font-medium text-gray-700 mb-1 block">File (PDF, DOCX, TXT — max 10MB)</label>
-                            <input wire:model="documentFile" type="file" accept=".pdf,.doc,.docx,.txt"
-                                class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer">
-                            @error('documentFile') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="text-xs font-medium text-gray-700 mb-1 block">File (PDF, DOCX, TXT — max 20MB)</label>
+                            <input name="document_file" type="file" accept=".pdf,.doc,.docx,.txt"
+                                class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer {{ $errors->has('document_file') ? 'border border-red-400 rounded' : '' }}">
+                            @error('document_file') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
-                        @if($documentError)
-                            <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ $documentError }}</div>
-                        @endif
-                        <button wire:click="uploadDocument" wire:loading.attr="disabled"
+                        <button type="submit" :disabled="uploading"
                             class="flex items-center gap-1.5 px-4 py-2 text-sm bg-[#003470] hover:bg-[#002558] text-white rounded-lg transition-colors disabled:opacity-60">
-                            <span wire:loading.remove wire:target="uploadDocument">Upload & Index</span>
-                            <span wire:loading wire:target="uploadDocument" class="flex items-center gap-1.5">
-                                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                            <span x-show="!uploading">Upload & Index</span>
+                            <span x-show="uploading" class="flex items-center gap-1.5">
+                                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                                 Indexing…
                             </span>
                         </button>
-                    </div>
+                    </form>
                 </div>
             @endif
 
